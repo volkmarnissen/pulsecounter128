@@ -9,5 +9,6 @@
     };
 
     void writeOutputs( omask_t mask){};   
+    
 #endif
 
