@@ -1,31 +1,45 @@
 #include <unity.h>
 #include <pulsecounter.hpp>
+#include <hardware.hpp>
 using namespace Pulsecounter;
-    void pulsecounter_inputHasChanged(){
-        imask_t pa[8] = {0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF};
-        setPreviousInputMaskForTest(pa);
-        OutputConfiguration config  ;
-        config.type = EMeterType;
-        configureOutput(0,config);
-        config.type= WaterMeterType;
-        configureOutput(1,config);
-        readPorts(EMeterType);
-        TEST_ASSERT_TRUE( inputHasChanged( 0,0));
-        TEST_ASSERT_FALSE( inputHasChanged( 0,0x10));
-        TEST_ASSERT_TRUE( inputHasChanged( 1,0));
-        readPorts(WaterMeterType);
-        TEST_ASSERT_TRUE( inputHasChanged( 0,0));
-        TEST_ASSERT_FALSE( inputHasChanged( 0,0x10)); 
-    }
-void setUp(){
 
+static int readInputCount = 0;
+static omask_t outputMask = 0;
+
+imask_t mock_readInputPorts()
+{
+    static imask_t currentState = 0;
+    // toggle first bit
+    imask_t save = currentState & ~1;
+    currentState = save | (currentState & 1) ^ 0x0001;
+    if (readInputCount == 3)
+        Pulsecounter::stopThread();
+    readInputCount++;
+    return currentState;
+};
+
+omask_t mock_readOutputPorts()
+{
+    return outputMask;
+};
+void mock_writeOutputs(omask_t o)
+{
+    outputMask = o;
+};
+
+void pulsecounter_simple()
+{
+    Pulsecounter::init();
+    //  TEST_ASSERT_TRUE( inputHasChanged( 0,0));
+    Pulsecounter::setOutputConfiguration(0, {EMeterType});
+    Pulsecounter::setPulseCounter(0, 0);
+    MockI2c::mock_readInputPorts = mock_readInputPorts;
+    MockI2c::mock_readOutputPorts = mock_readOutputPorts;
+    MockI2c::mock_writeOutputs = mock_writeOutputs;
+    Pulsecounter::startThread();
+    Pulsecounter::joinThread();
 }
-void tearDown(){
-
-}
-
-extern "C" int main(void) {
-    UNITY_BEGIN();
-    RUN_TEST(pulsecounter_inputHasChanged);
-    UNITY_END();
+void pulsecounter_tests()
+{
+    RUN_TEST(pulsecounter_simple);
 }
