@@ -1,0 +1,20 @@
+{ "counters" : 
+    [
+        {
+            "name" : "test1",
+            "multiplier" : 1000,
+            "inputPort": 0,
+            "Port": 0
+        }
+    ],
+  "outputs" : [
+        {
+            "port" : 0,
+            "type" : 0
+        }
+    ],
+    "network":{
+            "sslcert" : "abcdssl",
+            "hostname" : "hostname"
+    }
+}

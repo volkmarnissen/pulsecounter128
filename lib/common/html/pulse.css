@@ -1,0 +1,81 @@
+.flexrow {
+    flex-direction: row;
+    display: flex;
+     flex-wrap: wrap;
+ }
+.flexcolumn {
+    flex-direction: column;
+    display: flex;
+}
+.category {
+    width: auto;
+    min-width: 300pt;
+    background-color: blue;
+}
+.categoryHeader {
+    width: auto;
+    height: 25pt;
+   
+    min-width: 300pt;
+    background-color: gray;
+}
+.categoryBody {
+    width: auto;  
+    min-width: 300pt;
+    min-height: 40pt;
+    background-color: red;
+}
+.input {
+    max-width: 400pt; 
+    overflow:hidden; 
+    padding: 3pt; 
+    background-color: brown;
+   
+
+}
+.inputBody {
+    width: auto;   
+    min-height: 50pt;
+    background-color: yellow;
+    margin: 2pt;
+    flex-direction: column;
+    display: flex;    
+}
+.inputLabel{
+    height: 20pt;
+        width: auto;   
+ margin: 2pt;
+     background-color: pink;
+ 
+    font-weight: bold;
+}
+label {
+    display: inline-block;
+    width: 100px;
+    font-size: small;
+}
+input {
+    width: 100px;
+    margin: 2pt;
+        font-size: small;
+
+}
+input.w200 {
+    width: 200px;
+    margin: 2pt;
+        font-size: small;
+
+}
+.toggle {
+    float: right;
+}
+.hidden {
+    display: none
+}
+.inactive {
+    opacity: 50%;
+}
+.submitButton{
+    min-height: 20pt;
+    font-size: large;
+}
