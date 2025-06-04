@@ -1,16 +1,16 @@
 #include <unity.h>
 #include "config.hpp"
 
-std::string jsonfile = "{ \"counters\" : \n\
+std::string jsonfile("{ \"counters\" : \n\
     [\n\
         {\n\
-            \"name\" : \"test1\",\n\
-            \"multiplier\" : 1000,\n\
+            \"mqttname\" : \"test1\",\n\
+            \"divider\" : 888,\n\
             \"inputPort\": 0,\n\
             \"outputPort\": 0\n\
         }\n\
     ],\n\
-    \"outputs\" : [\n\
+  \"outputs\" : [\n\
         {\n\
             \"port\" : 0,\n\
             \"type\" : 0\n\
@@ -19,9 +19,20 @@ std::string jsonfile = "{ \"counters\" : \n\
     \"network\":{\n\
             \"sslcert\" : \"abcdssl\",\n\
             \"hostname\" : \"hostname\"\n\
+    },\n\
+    \"mqtt\":{\n\
+        \"mqtturl\": \"mqtts://blabla\",\n\
+        \"username\": \"Hugo\", \n\
+        \"password\": \"abcd1234\",  \n\
+        \"authenticationMethod\": 0 \n\
+    },\n\
+    \"schedule\":{\n\
+        \"hour\": \"23\",\n\
+        \"minute\": \"52\",\n\
+        \"second\": \"12\"\n\
     }\n\
-}\n\
-\n";
+\n\
+}\n");
 
 void config_simple()
 {

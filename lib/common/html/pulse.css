@@ -10,43 +10,36 @@
 .category {
     width: auto;
     min-width: 300pt;
-    background-color: blue;
 }
 .categoryHeader {
     width: auto;
     height: 25pt;
    
     min-width: 300pt;
-    background-color: gray;
+    background-color: rgba(128, 128, 128, 0.1);
 }
 .categoryBody {
     width: auto;  
     min-width: 300pt;
     min-height: 40pt;
-    background-color: red;
-}
+ }
 .input {
     max-width: 400pt; 
     overflow:hidden; 
     padding: 3pt; 
-    background-color: brown;
-   
-
 }
 .inputBody {
     width: auto;   
     min-height: 50pt;
-    background-color: yellow;
     margin: 2pt;
     flex-direction: column;
     display: flex;    
 }
 .inputLabel{
     height: 20pt;
-        width: auto;   
- margin: 2pt;
-     background-color: pink;
- 
+    width: auto;   
+    margin: 2pt;
+    background-color: rgba(255, 192, 203, 0.1);
     font-weight: bold;
 }
 label {

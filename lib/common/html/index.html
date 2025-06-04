@@ -55,9 +55,9 @@
                                     <div>
                                         <label for="authenticationMethod">Password: </label>
                                         <select name="authenticationMethod" >
-                                            <option value="0">SSL </option>
-                                            <option value="1">Username/Password</option>
-                                            <option value="2">No authentication</option>
+                                            <option value=0>SSL </option>
+                                            <option value=1>Username/Password</option>
+                                            <option value=2>No authentication</option>
                                         </select>
                                     </div>                
                                 </div>
@@ -70,9 +70,9 @@
                                     <label for="hour:">hour: </label>
                                     <input type="string" name="hour" placeholder="0-23, 0-23">  
                                     <label for="minute:">minute: </label>
-                                    <input type="string" name="minute" placeholder="0-59, 0-59...">  
+                                    <input type="string" name="minute" placeholder="0-59, 0-59..." pattern="(([0-5][0-9]|[0-9])(\s*,\s*))*([0-5][0-9]|[0-9])\s*$">  
                                     <label for="second:">minute: </label>
-                                    <input type="string" name="second" placeholder="0-59, 0-59...">     
+                                    <input type="string" name="second" placeholder="0-59, 0-59..."  pattern="(([0-5][0-9]|[0-9])(\s*,\s*))*([0-5][0-9]|[0-9])\s*$">     
                                 </div>
                             </div>                        </div>
                     </div>
@@ -81,10 +81,10 @@
                     <div class="categoryHeader">
                         <span>Output Pin 1</span>
                         <label for="type">Type </label>
-                        <select name="type_1" >
-                           <option value="-1">None</option>
-                           <option value="0">Energy Meter</option>
-                           <option value="1">Water Meter</option>
+                        <select name="type_1"  onchange="categoryHeaderUpdateActive(this.name)">
+                           <option value= -1>None</option>
+                           <option value=0>Energy Meter</option>
+                           <option value=1>Water Meter</option>
                        </select>
                        <div class="toggle" >
                             <button id="out_1" type="button" onclick="toggle(this.id)">
