@@ -59,7 +59,7 @@ static esp_err_t postConfigHandler(httpd_req_t *req)
 
 /* URI handler structure for GET /uri */
 static httpd_uri_t indexUri = {
-    .uri = "/index.html",
+    .uri = "*",
     .method = HTTP_GET,
     .handler = getHandler,
     .user_ctx = NULL};

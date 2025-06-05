@@ -11,7 +11,7 @@ void Webserver::start(httpd_ssl_config_t *sslConfig)
     stop();
     httpd_handle_t server = NULL;
     httpd_config_t config = HTTPD_DEFAULT_CONFIG();
-
+    config.uri_match_fn = httpd_uri_match_wildcard;
     // Start the httpd server
     if (sslConfig == NULL)
         ESP_LOGI(TAG, "Starting server on port: '%d'", config.server_port);
