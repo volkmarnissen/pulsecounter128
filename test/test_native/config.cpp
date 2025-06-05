@@ -37,6 +37,11 @@ std::string jsonfile("{ \"counters\" : \n\
 void config_simple()
 {
     Config config = Config::getConfig(jsonfile.c_str());
+    TEST_ASSERT_TRUE(std::string("hostname") == std::string(config.getNetwork().getHostname()));
+    TEST_ASSERT_TRUE(std::string("Hugo") == std::string(config.getMqtt().getUsername()));
+    TEST_ASSERT_TRUE(std::string("23") == std::string(config.getSchedule().getHour()));
+    int mp = config.getCounters()[0].getDivider();
+    TEST_ASSERT_TRUE(888 == mp);
 }
 void config_tests()
 {

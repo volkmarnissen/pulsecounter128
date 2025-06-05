@@ -68,6 +68,7 @@
         "iomanip": "cpp",
         "ranges": "cpp",
         "valarray": "cpp",
-        "config.hpp": "c"
+        "config.hpp": "c",
+        "websrvplscount hpp": "cpp"
     }
 }

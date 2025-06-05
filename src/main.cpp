@@ -2,7 +2,8 @@
 #include "pulsecounter.hpp"
 #include "freertos/FreeRTOS.h"
 #include "network.hpp"
-
+#include "websrvplscount.hpp"
+static const char *TAG = "main";
 std::string jsonfile = "{ \"counters\" : \n\
     [\n\
         {\n\
@@ -28,16 +29,20 @@ std::string jsonfile = "{ \"counters\" : \n\
 extern "C" void app_main()
 {
     Config cfg = Config::getConfig(jsonfile.c_str());
-    loge("test", "test");
+    loge(TAG, "test");
 
     for (auto counter : cfg.getCounters())
         Pulsecounter::setPulseCounter(counter.getOutputPort(), counter.getInputPort());
     Ethernet eth;
+    eth.setHostname(cfg.getNetwork().getHostname());
     eth.init();
-    while (true)
+    if (eth.waitForConnection())
     {
-        loge("test", "delay");
-        vTaskDelay(1000 / portTICK_PERIOD_MS); // DOES THE SOFTAP CONTINUE TO EXIST IN A FTM FRIENDLY STATE? IS THE WIFI PAUSED?
-        eth.deinit();
+        WebserverPulsecounter webserver;
+        webserver.start();
+    }
+    else
+    {
+        loge(TAG, "Unable to connect to the internet");
     }
 }

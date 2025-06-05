@@ -3,7 +3,7 @@
 
 #include <stdexcept>
 #include "nlohmann/json.hpp"
-const char *tag = "config";
+static const char *tag = "config";
 
 class CounterConfigLoad : public CounterConfig
 {
@@ -14,8 +14,8 @@ public:
             outputPort = source["outputPort"];
         if (source.contains("inputPort"))
             inputPort = source["inputPort"];
-        if (source.contains("multiplier"))
-            multiplier = source["multiplier"];
+        if (source.contains("divider"))
+            divider = source["divider"];
     }
 };
 
@@ -43,7 +43,34 @@ public:
             hostname = source["hostname"];
     }
 };
-
+class MqttConfigLoad : public MqttConfig
+{
+public:
+    MqttConfigLoad(nlohmann::json source)
+    {
+        if (source.contains("mqtturl"))
+            mqtturl = source["mqtturl"];
+        if (source.contains("username"))
+            username = source["username"];
+        if (source.contains("password"))
+            password = source["password"];
+        if (source.contains("authenticationMethod"))
+            authenticationMethod = source["authenticationMethod"];
+    }
+};
+class ScheduleConfigLoad : public ScheduleConfig
+{
+public:
+    ScheduleConfigLoad(nlohmann::json source)
+    {
+        if (source.contains("hour"))
+            hour = source["hour"];
+        if (source.contains("minute"))
+            minute = source["minute"];
+        if (source.contains("second"))
+            second = source["second"];
+    }
+};
 class ConfigLoad : public Config
 {
 public:
@@ -73,7 +100,20 @@ public:
             loge(tag, "No network configuration specified in configuration");
             return false;
         };
-
+        if (json.contains("mqtt"))
+            mqtt = MqttConfigLoad(json["mqtt"]);
+        else
+        {
+            loge(tag, "No MQTT configuration specified in configuration");
+            return false;
+        };
+        if (json.contains("schedule"))
+            schedule = ScheduleConfigLoad(json["schedule"]);
+        else
+        {
+            loge(tag, "No Schedule configuration specified in configuration");
+            return false;
+        };
         return true;
     };
 };
