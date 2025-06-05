@@ -8,8 +8,9 @@ struct PulseCounterType
   uint8_t numOutPort;
   uint32_t counter;
 };
-struct OutputConfiguration
+class OutputConfiguration
 {
+public:
   OutputConfigurationType type;
 };
 const uint8_t noInputPort = 0xFF;

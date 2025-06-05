@@ -139,7 +139,6 @@ bool Ethernet::waitForConnection(int waitTimeMs, const char *hostname)
     // Optionally, wait for DNS resolution to complete
     const TickType_t xTicksToWait = pdMS_TO_TICKS(waitTimeMs);
     EventBits_t bits = xEventGroupWaitBits(s_network_event_group, NETWORK_CONNECTED_BIT | TCPIP_CONNECTED_BIT, false, true, xTicksToWait);
-    printf("Got IP Address");
     dns_gethostbyname(hostname, &addr, dns_found_cb, nullptr);
     bits = xEventGroupWaitBits(s_network_event_group, DNS_BIT, false, true, xTicksToWait);
     return (bits & DNS_BIT);

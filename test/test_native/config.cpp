@@ -17,7 +17,9 @@ std::string jsonfile("{ \"counters\" : \n\
         }\n\
     ],\n\
     \"network\":{\n\
-            \"sslcert\" : \"abcdssl\",\n\
+            \"sslhost\" : \"abcdssl\",\n\
+            \"sslhostkey\" : \"keyssl\",\n\
+            \"sslca\" : \"cassl\",\n\
             \"hostname\" : \"hostname\"\n\
     },\n\
     \"mqtt\":{\n\

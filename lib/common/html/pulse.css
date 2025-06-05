@@ -44,16 +44,16 @@
 }
 label {
     display: inline-block;
-    width: 100px;
+    width: 110px;
     font-size: small;
 }
-input {
+input{
     width: 100px;
     margin: 2pt;
         font-size: small;
 
 }
-input.w200 {
+.w200 {
     width: 200px;
     margin: 2pt;
         font-size: small;

@@ -6,6 +6,7 @@
 #include "esp_https_server.h"
 #include <string>
 #include "websrvplscount.hpp"
+#include "config.hpp"
 
 static const char *TAG = "wbsrvplscount";
 static const int SCRATCH_BUFSIZE = 8192;
@@ -20,6 +21,10 @@ static esp_err_t getHandler(httpd_req_t *r)
         httpd_resp_send(r, _binary_pulse_js_start, HTTPD_RESP_USE_STRLEN);
     else if (std::string(r->uri).ends_with("pulse.css"))
         httpd_resp_send(r, _binary_pulse_css_start, HTTPD_RESP_USE_STRLEN);
+    else if (std::string(r->uri).ends_with("api/config"))
+    {
+        httpd_resp_send(r, Config::getJson().c_str(), HTTPD_RESP_USE_STRLEN);
+    }
     else
         httpd_resp_send(r, _binary_index_html_start, HTTPD_RESP_USE_STRLEN);
     return ESP_OK;
@@ -66,14 +71,14 @@ static httpd_uri_t indexUri = {
 
 /* URI handler structure for POST /uri */
 static httpd_uri_t postConfigUri = {
-    .uri = "/config",
+    .uri = "/api/config",
     .method = HTTP_POST,
     .handler = postConfigHandler,
     .user_ctx = NULL};
 
-void WebserverPulsecounter::start()
+void WebserverPulsecounter::start(const char *serverCert, const char *caCert, const char *privateKey)
 {
-    server.start();
+    server.start(serverCert, caCert, privateKey);
     ESP_ERROR_CHECK(server.registerUriHandler(&indexUri));
     ESP_ERROR_CHECK(server.registerUriHandler(&postConfigUri));
 };

@@ -2,14 +2,20 @@
 #include <string>
 #include <vector>
 #include "common.hpp"
+
+class OutputConfiguration
+{
+public:
+    OutputConfigurationType type;
+};
 class OutputConfig
 {
 protected:
-    OutputConfigurationType type;
+    OutputConfiguration config;
     int port;
 
 public:
-    OutputConfigurationType getType() { return type; };
+    OutputConfiguration getConfiguration() { return config; };
     int getPort() { return port; };
 };
 
@@ -30,10 +36,14 @@ class NetworkConfig
 {
 protected:
     std::string hostname;
-    std::string sslcert;
+    std::string sslhost;
+    std::string sslhostkey;
+    std::string sslca;
 
 public:
-    const char *getSslcert() const { return sslcert.c_str(); };
+    const char *getSslHost() const { return sslhost.c_str(); };
+    const char *getSslHostKey() const { return sslhostkey.c_str(); };
+    const char *getSslCa() const { return sslca.c_str(); };
     const char *getHostname() const { return hostname.c_str(); };
 };
 
@@ -81,4 +91,6 @@ public:
     const MqttConfig &getMqtt() const { return const_cast<MqttConfig &>(mqtt); };
     const ScheduleConfig &getSchedule() const { return const_cast<ScheduleConfig &>(schedule); };
     static const Config &getConfig(const char *jsonContent = NULL);
+    static const std::string getJson();
+    static void setJson(const char *setJson);
 };

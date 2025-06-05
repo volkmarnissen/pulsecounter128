@@ -1,9 +1,11 @@
 #include <unity.h>
 extern void network_tests();
+extern void config_tests();
 
 void alltests()
 {
     network_tests();
+    config_tests();
 }
 void setUp()
 {

@@ -1,32 +1,33 @@
-{ "counters" : 
-    [
-        {
-            "mqttname" : "test1",
-            "divider" : 888,
-            "inputPort": 0,
-            "outputPort": 0
-        }
-    ],
-  "outputs" : [
-        {
-            "port" : 0,
-            "type" : 0
-        }
-    ],
-    "network":{
-            "sslcert" : "abcdssl",
-            "hostname" : "hostname"
-    },
-    "mqtt":{
-        "mqtturl": "mqtts://blabla",
-        "username": "Hugo", 
-        "password": "abcd1234",  
-        "authenticationMethod": 0 
-    },
-    "schedule":{
-        "hour": "23",
-        "minute": "52",
-        "second": "12"
+{
+  "counters": [
+    {
+      "mqttname": "test1",
+      "divider": 888,
+      "inputPort": 0,
+      "outputPort": 0
     }
-
+  ],
+  "outputs": [
+    {
+      "port": 0,
+      "type": 0
+    }
+  ],
+  "network": {
+    "sslhost": "host",
+    "sslhostkey": "hostkey",
+    "sslca": "ca",
+    "hostname": "hostname"
+  },
+  "mqtt": {
+    "mqtturl": "mqtts://blabla",
+    "username": "Hugo",
+    "password": "abcd1234",
+    "authenticationMethod": 0
+  },
+  "schedule": {
+    "hour": "23",
+    "minute": "52",
+    "second": "12"
+  }
 }

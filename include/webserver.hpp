@@ -8,7 +8,7 @@ class Webserver
     bool isSsl = false;
 
 public:
-    void start(httpd_ssl_config_t *sslConfig = NULL);
+    void start(const char *serverCert = NULL, const char *caCert = NULL, const char *privateKey = NULL);
     void stop(void);
     esp_err_t registerUriHandler(httpd_uri_t *uriHandler);
 };

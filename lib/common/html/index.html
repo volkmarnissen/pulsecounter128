@@ -29,10 +29,17 @@
                                         <input type="string" name="hostname">                                         
                                     </div>
                                     <div>
-                                        <label for="sslcert">SSL Certificate: </label>
+                                        <label for="sslhost">Cert. Host: </label>
                                         <input type="string" name="sslcert">                                         
                                     </div>
-
+                                    <div>
+                                        <label for="sslhostkey">SSL Cert. Host key: </label>
+                                        <input type="string" name="sslcert">                                         
+                                    </div>
+                                    <div>
+                                        <label for="sslca">Cert. CA: </label>
+                                        <input type="string" name="sslcert">                                         
+                                    </div>                                    
                                 </div>
                             </div>
                             <div class="input">
@@ -54,7 +61,7 @@
                                     </div> 
                                     <div>
                                         <label for="authenticationMethod">Password: </label>
-                                        <select name="authenticationMethod" >
+                                        <select class="w200" name="authenticationMethod" >
                                             <option value=0>SSL </option>
                                             <option value=1>Username/Password</option>
                                             <option value=2>No authentication</option>
@@ -67,12 +74,16 @@
                                     Daily MQTT Schedule
                                 </div>
                                 <div class="inputBody">
-                                    <label for="hour:">hour: </label>
-                                    <input type="string" name="hour" placeholder="0-23, 0-23">  
-                                    <label for="minute:">minute: </label>
-                                    <input type="string" name="minute" placeholder="0-59, 0-59..." pattern="(([0-5][0-9]|[0-9])(\s*,\s*))*([0-5][0-9]|[0-9])\s*$">  
-                                    <label for="second:">minute: </label>
-                                    <input type="string" name="second" placeholder="0-59, 0-59..."  pattern="(([0-5][0-9]|[0-9])(\s*,\s*))*([0-5][0-9]|[0-9])\s*$">     
+                                    <div>
+                                        <label for="hour:">hour: </label>
+                                        <input type="string" name="hour" placeholder="0-23, 0-23">  
+                                    </div><div>
+                                        <label for="minute:">minute: </label>
+                                        <input type="string" name="minute" placeholder="0-59, 0-59..." pattern="(([0-5][0-9]|[0-9])(\s*,\s*))*([0-5][0-9]|[0-9])\s*$">  
+                                    </div><div>
+                                        <label for="second:">minute: </label>
+                                        <input type="string" name="second" placeholder="0-59, 0-59..."  pattern="(([0-5][0-9]|[0-9])(\s*,\s*))*([0-5][0-9]|[0-9])\s*$">     
+                                    </div>
                                 </div>
                             </div>                        </div>
                     </div>
