@@ -14,7 +14,6 @@ describe('template spec', () => {
       fixture: "config.json",
     });
     cy.intercept('POST','**/config', (req) => {
-      console.log("I am posting")
       expect(req.body.counters.length).to.equal(1)
       expect(req.body.counters[0].divider).to.equal(888777)
       req.reply({
