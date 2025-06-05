@@ -1,8 +1,8 @@
-#include "nlohmann/json.hpp"
 #include "config.hpp"
 #include "hardware.hpp"
-#include <stdexcept>
 
+#include <stdexcept>
+#include "nlohmann/json.hpp"
 const char *tag = "config";
 
 class CounterConfigLoad : public CounterConfig
