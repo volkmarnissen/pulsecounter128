@@ -6,7 +6,7 @@
 #include "webserver.hpp"
 static const char *TAG = "webserver";
 
-void Webserver::start(const char *serverCert, const char *caCert, const char *privateKey)
+void Webserver::start(const char *serverCert, const char *caCert, const unsigned char *privateKey)
 {
     stop();
     httpd_handle_t server = NULL;
@@ -15,9 +15,9 @@ void Webserver::start(const char *serverCert, const char *caCert, const char *pr
 
     sslConfig.servercert = (uint8_t *)serverCert;
     sslConfig.servercert_len = strlen(serverCert);
-
     sslConfig.prvtkey_pem = privateKey;
-    sslConfig.prvtkey_len = strlen(privateKey);
+
+    // TODO sslConfig.prvtkey_len = ;
     config.uri_match_fn = httpd_uri_match_wildcard;
     // Start the httpd server
     if (serverCert == NULL)

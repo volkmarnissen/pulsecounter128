@@ -69,6 +69,7 @@
         "ranges": "cpp",
         "valarray": "cpp",
         "config.hpp": "c",
-        "websrvplscount hpp": "cpp"
+        "websrvplscount hpp": "cpp",
+        "i2cdev.h": "c"
     }
 }

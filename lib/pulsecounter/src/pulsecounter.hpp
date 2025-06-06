@@ -1,6 +1,7 @@
 #pragma once
 #include "hardware.hpp"
 #include "common.hpp"
+#include "config.hpp"
 #include <thread>
 struct PulseCounterType
 {
@@ -8,11 +9,7 @@ struct PulseCounterType
   uint8_t numOutPort;
   uint32_t counter;
 };
-class OutputConfiguration
-{
-public:
-  OutputConfigurationType type;
-};
+
 const uint8_t noInputPort = 0xFF;
 namespace Pulsecounter
 {

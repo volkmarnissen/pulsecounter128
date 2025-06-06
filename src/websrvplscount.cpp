@@ -76,7 +76,7 @@ static httpd_uri_t postConfigUri = {
     .handler = postConfigHandler,
     .user_ctx = NULL};
 
-void WebserverPulsecounter::start(const char *serverCert, const char *caCert, const char *privateKey)
+void WebserverPulsecounter::start(const char *serverCert, const char *caCert, const unsigned char *privateKey)
 {
     server.start(serverCert, caCert, privateKey);
     ESP_ERROR_CHECK(server.registerUriHandler(&indexUri));

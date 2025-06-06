@@ -40,7 +40,9 @@ I2c *I2c::get()
 #include <esp_log.h>
 #include <stdio.h>
 #include <string.h>
-
+#include <driver/gpio.h>
+#include <i2cdev.h>
+#include "pcf8574.h"
 static const int i2cAddressInputs1_8 = 0x22;
 static const int i2cAddressInputs9_16 = 0x21;
 static const int i2cAddressOutputs1_8 = 0x24;
@@ -52,43 +54,40 @@ static const char *TAG = "hardware";
 
 bool I2c::initBus()
 {
+    i2c_master_port = I2C_NUM_1;
+    // i2c_config_t conf;
+    // conf.mode = I2C_MODE_MASTER;
+    // conf.sda_io_num = i2cSda;
+    // conf.sda_pullup_en = GPIO_PULLUP_ENABLE;
+    // conf.scl_io_num = i2cScl;
+    // conf.scl_pullup_en = GPIO_PULLUP_ENABLE;
+    // conf.master.clk_speed = 100000;
+    // if (ESP_OK != i2c_param_config(i2c_master_port, &conf))
+    //     return false;
 
-    i2c_master_bus_config_t i2c_mst_config;
-    memset(&i2c_mst_config, 0, sizeof(i2c_mst_config));
-    i2c_mst_config.clk_source = I2C_CLK_SRC_DEFAULT;
-    i2c_mst_config.i2c_port = i2cPort;
-    i2c_mst_config.scl_io_num = i2cScl;
-    i2c_mst_config.sda_io_num = i2cSda;
-
-    i2c_mst_config.glitch_ignore_cnt = 7;
-    i2c_mst_config.flags.enable_internal_pullup = true;
-    i2c_mst_config.intr_priority = 0;
-    i2c_mst_config.trans_queue_depth = 0;            // max device_num
-    i2c_mst_config.flags.enable_internal_pullup = 1; // max device_num
-    i2c_mst_config.flags.allow_pd = 1;               // Other values will core dump!!!
-    ESP_LOGI(TAG, "Initializing bus \n");
-    return (ESP_OK != i2c_new_master_bus(&i2c_mst_config, &bus_handle));
+    // return (ESP_OK != i2c_driver_install(i2c_master_port, conf.mode,
+    //                                      0,
+    //                                      0, 0));
+    return true;
 }
 
-bool I2c::initDevices(const int *devAddresses, i2c_master_dev_handle_t *devHandles)
+bool I2c::initDevices(const int *devAddresses, i2c_dev_t *devHandles)
 {
-    assert(bus_handle != nullptr);
-    ESP_LOGI(TAG, "Initializing devices");
     for (int idx = 0; idx < 2; idx++)
     {
-        i2c_device_config_t dev_cfg;
-        memset(&dev_cfg, 0, sizeof(dev_cfg));
-
-        dev_cfg.dev_addr_length = I2C_ADDR_BIT_LEN_7;
-        dev_cfg.device_address = 0x58;
-        dev_cfg.scl_speed_hz = 100000;
-        i2c_master_dev_handle_t devHandle;
-        ESP_LOGI(TAG, "Initializing device %d\n", (int)bus_handle);
-        if (ESP_OK != i2c_master_bus_add_device(bus_handle, &dev_cfg, &devHandle))
+        ESP_LOGI(TAG, "Initializing 0x%02X\n", devAddresses[idx]);
+        memset(devHandles + idx, 0, sizeof(devHandles[0]));
+        if (ESP_OK != pcf8574_init_desc(devHandles + idx, devAddresses[idx], i2c_master_port, i2cSda, i2cScl))
         {
-            ESP_LOGI(TAG, "Initializing device failed %d\n", idx);
+            ESP_LOGE(TAG, "Initializing device failed 0x%02X\n", devHandles[idx].addr);
             return false;
-        };
+        }
+        else
+        {
+            ESP_LOGE(TAG, "Initializing device successful 0x%02X\n", devHandles[idx].addr);
+        }
+
+        ;
     }
     ESP_LOGI(TAG, "Devices initialized\n");
     return true;
@@ -96,29 +95,26 @@ bool I2c::initDevices(const int *devAddresses, i2c_master_dev_handle_t *devHandl
 
 I2c::I2c()
 {
-    dev_handleReads[0] = dev_handleReads[1] = nullptr;
-    dev_handleWrites[0] = dev_handleWrites[1] = nullptr;
-    bus_handle = nullptr;
+    i2c_master_port = I2C_NUM_1;
+    isInitialized = false;
 };
 
 I2c::~I2c()
 {
-    for (int idx = 0; idx < 2; idx++)
-    {
-        if (dev_handleReads[idx] != nullptr)
-            i2c_master_bus_rm_device(dev_handleReads[idx]);
-        if (dev_handleWrites[idx] != nullptr)
-            i2c_master_bus_rm_device(dev_handleWrites[idx]);
-    }
-    i2c_del_master_bus(bus_handle);
+    if (isInitialized)
+        for (int idx = 0; idx < 2; idx++)
+        {
+            pcf8574_free_desc(dev_handleReads + idx);
+            pcf8574_free_desc(dev_handleWrites + idx);
+        }
 };
 
 omask_t I2c::readOutputPorts()
 {
     omask_t rc;
-    unsigned char *rdBuf = &rc;
-    if (ESP_OK != i2c_master_receive(dev_handleReads[0], &rc, 1, -1))
-        ESP_LOGE("I2C", "Unable to read to I2C");
+    esp_err_t esprc;
+    if (ESP_OK != (esprc = pcf8574_port_read(dev_handleWrites, &rc)))
+        ESP_LOGE("I2C", "Unable to read from I2C %X\n", esprc);
     return rc;
 };
 
@@ -126,17 +122,19 @@ imask_t I2c::readInputPorts()
 {
     imask_t rc;
     unsigned char *rdBuf = (unsigned char *)&rc;
-    if (ESP_OK != i2c_master_receive(dev_handleReads[0], rdBuf, 1, -1))
+    if (ESP_OK != pcf8574_port_read(dev_handleReads, rdBuf))
         ESP_LOGE("I2C", "Unable to read to I2C");
-    if (ESP_OK != i2c_master_receive(dev_handleReads[1], rdBuf + 1, 1, -1))
+    if (ESP_OK != pcf8574_port_read(dev_handleReads + 1, rdBuf + 1))
         ESP_LOGE("I2C", "Unable to read to I2C");
     return rc;
 };
 
 void I2c::writeOutputs(omask_t mask)
 {
-    if (ESP_OK != i2c_master_transmit(dev_handleWrites[0], &mask, 1, -1))
+    ESP_LOGI(TAG, "writing to 0x%02X\n", dev_handleWrites->addr);
+    if (ESP_OK != pcf8574_port_write(dev_handleWrites, mask))
         ESP_LOGE("I2C", "Unable to write to I2C");
+    ESP_LOGI(TAG, "wrote");
 };
 
 const int readAddresses[] = {i2cAddressInputs1_8, i2cAddressInputs9_16};
@@ -147,10 +145,12 @@ I2c *I2c::get()
     if (I2c::theInstance == nullptr)
     {
         I2c::theInstance = new I2c();
-        ESP_LOGI("I2C", "BusHandle %d\n", (int)I2c::theInstance->bus_handle);
-        bool rc = !I2c::theInstance->initBus();
-        ESP_LOGI("I2C", "BusHandle after Init %d\n", (int)I2c::theInstance->bus_handle);
-        if (rc || !I2c::theInstance->initDevices(readAddresses, I2c::theInstance->dev_handleReads))
+        if (!I2c::theInstance->initDevices(readAddresses, I2c::theInstance->dev_handleReads))
+        {
+            delete theInstance;
+            I2c::theInstance = nullptr;
+        };
+        if (!I2c::theInstance->initDevices(writeAddresses, I2c::theInstance->dev_handleWrites))
         {
             delete theInstance;
             I2c::theInstance = nullptr;

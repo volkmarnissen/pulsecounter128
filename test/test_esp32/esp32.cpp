@@ -5,8 +5,8 @@ extern void hardware_tests();
 
 void alltests()
 {
-    // network_tests();
-    // config_tests();
+    network_tests();
+    config_tests();
     hardware_tests();
 }
 void setUp()

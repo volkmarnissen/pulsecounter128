@@ -1,7 +1,7 @@
 #pragma once
 #include <cstdint>
 #ifndef MOCK_I2C
-#include <driver/i2c_master.h>
+#include <pcf8574.h>
 #endif
 typedef unsigned char omask_t;
 typedef unsigned short imask_t;
@@ -12,10 +12,11 @@ class I2c
 {
     static I2c *theInstance;
 #ifndef MOCK_I2C
-    i2c_master_bus_handle_t bus_handle;
-    i2c_master_dev_handle_t dev_handleReads[2];
-    i2c_master_dev_handle_t dev_handleWrites[2];
-    bool initDevices(const int *devAddresses, i2c_master_dev_handle_t *devHandles);
+    i2c_port_t i2c_master_port;
+    i2c_dev_t dev_handleReads[2];
+    i2c_dev_t dev_handleWrites[2];
+    bool isInitialized;
+    bool initDevices(const int *devAddresses, i2c_dev_t *devHandles);
     bool initBus();
     I2c();
     ~I2c();

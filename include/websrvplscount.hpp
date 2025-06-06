@@ -7,6 +7,6 @@ class WebserverPulsecounter
     Webserver server;
 
 public:
-    void start(const char *serverCert = NULL, const char *caCert = NULL, const char *privateKey = NULL);
+    void start(const char *serverCert = NULL, const char *caCert = NULL, const unsigned char *privateKey = NULL);
     void stop();
 };
