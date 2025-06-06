@@ -4,7 +4,7 @@
 #include <string.h>
 #include <iostream>
 #include <cassert>
-
+static const char *TAG = "pulsecounter";
 struct OutputData
 {
    uint16_t currentCount;
@@ -38,7 +38,7 @@ bool Pulsecounter::inputHasRisingEdge(PulseCounterType &pulseCounter)
 bool Pulsecounter::readInputsRisingEdge()
 {
    inputsHaveRisingEdges = false;
-   omask_t currentMask = readOutputPorts();
+   omask_t currentMask = I2c::get()->readOutputPorts();
 
    for (int a = 0; a < sizeof(outputData) / sizeof(outputData[0]); a++)
    {
@@ -47,16 +47,16 @@ bool Pulsecounter::readInputsRisingEdge()
       {
          // Set bit for outPin 1-16
          omask_t outputPinMask = currentMask | odata.outputMask;
-         writeOutputs(outputPinMask);
+         I2c::get()->writeOutputs(outputPinMask);
          odata.previousInputMask = odata.currentInputMask;
-         odata.currentInputMask = readInputPorts();
+         odata.currentInputMask = I2c::get()->readInputPorts();
 
          imask_t inputMask = odata.currentInputMask & (~odata.previousInputMask);
          if (inputMask > 0)
             inputsHaveRisingEdges = true;
       }
    }
-   writeOutputs(currentMask);
+   I2c::get()->writeOutputs(currentMask);
 
    return inputsHaveRisingEdges;
 }
@@ -66,14 +66,14 @@ void Pulsecounter::readPorts(OutputConfigurationType type)
    for (int a = 0; a < numOutPorts; a++)
       if (outputData[a].currentCount == 0)
       {
-         omask_t currentMask = readOutputPorts();
+         omask_t currentMask = I2c::get()->readOutputPorts();
          // Set bit for outPin 1-16
          omask_t pinMask = currentMask | (1 << a);
-         writeOutputs(pinMask);
+         I2c::get()->writeOutputs(pinMask);
          // Read bits from input
          outputData[a].previousInputMask = outputData[a].currentInputMask;
-         outputData[a].currentInputMask = readInputPorts();
-         writeOutputs(currentMask);
+         outputData[a].currentInputMask = I2c::get()->readInputPorts();
+         I2c::get()->writeOutputs(currentMask);
       }
 }
 
@@ -101,6 +101,12 @@ void Pulsecounter::countPulses()
 }
 void readInput()
 {
+   if (I2c::get() == nullptr)
+   {
+      loge(TAG, "Unable to initialize I2C! Terminating...");
+      return;
+   }
+
    while (runReadInputThread)
    {
       if (Pulsecounter::readInputsRisingEdge())
@@ -116,6 +122,7 @@ void readInput()
       // 20ms makes shure to recognizes it
       std::this_thread::sleep_for(std::chrono::milliseconds(waitTimeInMillis));
    }
+   I2c::deleteInstance();
 }
 #ifndef MOCK_PTHREAD
 #include <esp_pthread.h>
