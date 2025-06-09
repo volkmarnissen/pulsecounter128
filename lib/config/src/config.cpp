@@ -73,11 +73,14 @@ public:
     ScheduleConfigLoad(nlohmann::json source)
     {
         if (source.contains("hour"))
-            hour = source["hour"];
+            for (auto h : source["hour"])
+                hour.push_back(h);
         if (source.contains("minute"))
-            minute = source["minute"];
+            for (auto m : source["minute"])
+                minute.push_back(m);
         if (source.contains("second"))
-            second = source["second"];
+            for (auto s : source["second"])
+                second.push_back(s);
     }
 };
 class ConfigLoad : public Config
@@ -211,6 +214,6 @@ const std::string Config::getJson()
 };
 #else
 void Config::setJson(const char *newJson) {};
-const std::string Config::getJson() {};
+const std::string Config::getJson() { return std::string("");};
 
 #endif

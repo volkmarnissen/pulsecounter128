@@ -65,14 +65,14 @@ public:
 class ScheduleConfig
 {
 protected:
-    std::string hour;
-    std::string minute;
-    std::string second;
+    std::vector<int> hour;
+    std::vector<int> minute;
+    std::vector<int> second;
 
 public:
-    const char *getHour() const { return hour.c_str(); };
-    const char *getMinute() const { return minute.c_str(); };
-    const char *getSecond() const { return second.c_str(); };
+    const std::vector<int> &getHour() const { return (const std::vector<int>)hour; };
+    const std::vector<int> &getMinute() const { return (const std::vector<int>)minute; };
+    const std::vector<int> &getSecond() const { return (const std::vector<int>)second; };
 };
 
 class Config
