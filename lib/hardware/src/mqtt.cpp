@@ -8,9 +8,12 @@
  * @param event_id The id for the received event.
  * @param event_data The data for the event, esp_mqtt_event_handle_t.
  */
+#include "mqtt.hpp"
+
 #ifndef NATIVE
 #include "mqtt_client.h"
-#include "esp_log.h"
+#include "esp_event.h"
+#include <esp_log.h>
 
 static const char *TAG = "mqtt";
 static void log_error_if_nonzero(const char *message, int error_code)
@@ -70,51 +73,31 @@ static void mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_
         }
         break;
     default:
-        ESP_LOGI(TAG, "Other event id:%d", event->event_id);
+        ESP_LOGI(TAG, "Other event id");
         break;
     }
 }
 
-static void mqtt_app_start(void)
+static esp_err_t mqtt_app_start(esp_mqtt_client_handle_t client)
 {
-    esp_mqtt_client_config_t mqtt_cfg = {
-        .broker.address.uri = CONFIG_BROKER_URL,
-    };
-#if CONFIG_BROKER_URL_FROM_STDIN
-    char line[128];
-
-    if (strcmp(mqtt_cfg.broker.address.uri, "FROM_STDIN") == 0)
-    {
-        int count = 0;
-        printf("Please enter url of mqtt broker\n");
-        while (count < 128)
-        {
-            int c = fgetc(stdin);
-            if (c == '\n')
-            {
-                line[count] = '\0';
-                break;
-            }
-            else if (c > 0 && c < 127)
-            {
-                line[count] = c;
-                ++count;
-            }
-            vTaskDelay(10 / portTICK_PERIOD_MS);
-        }
-        mqtt_cfg.broker.address.uri = line;
-        printf("Broker url: %s\n", line);
-    }
-    else
-    {
-        ESP_LOGE(TAG, "Configuration mismatch: wrong broker url");
-        abort();
-    }
-#endif /* CONFIG_BROKER_URL_FROM_STDIN */
-
-    esp_mqtt_client_handle_t client = esp_mqtt_client_init(&mqtt_cfg);
     /* The last argument may be used to pass data to the event handler, in this example mqtt_event_handler */
-    esp_mqtt_client_register_event(client, ESP_EVENT_ANY_ID, mqtt_event_handler, NULL);
-    esp_mqtt_client_start(client);
+    esp_mqtt_client_register_event(client, MQTT_EVENT_ANY, mqtt_event_handler, NULL);
+    return esp_mqtt_client_start(client);
 }
+MqttClient::MqttClient(const MqttConfig &config)
+{
+    esp_mqtt_client_config_t mqtt_cfg;
+    mqtt_cfg.broker.address.uri = config.getMqtturl();
+    config.getMqtturl();
+    client = esp_mqtt_client_init(&mqtt_cfg);
+}
+esp_err_t MqttClient::start(void)
+{
+    return mqtt_app_start(client);
+}
+esp_err_t MqttClient::stop(void)
+{
+    return esp_mqtt_client_stop(client);
+}
+
 #endif
