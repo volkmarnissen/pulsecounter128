@@ -1,14 +1,6 @@
 #include <unity.h>
 #include "config.hpp"
-#include <string>
-#include <fstream>
-#include <streambuf>
-
-std::string readFile( const char* filename){
-    std::ifstream t(filename);
-    return std::string((std::istreambuf_iterator<char>(t)),
-            std::istreambuf_iterator<char>());
-}
+#include "native.hpp"
 
 void config_simple()
 {
@@ -17,6 +9,10 @@ void config_simple()
     TEST_ASSERT_TRUE(std::string("hostname") == std::string(config.getNetwork().getHostname()));
     TEST_ASSERT_TRUE(std::string("Hugo") == std::string(config.getMqtt().getUsername()));
     TEST_ASSERT_TRUE(23 == config.getSchedule().getHour()[0]);
+    TEST_ASSERT_EQUAL_INT32(5, config.getSchedule().getMinute().size());
+    TEST_ASSERT_EQUAL_INT32(50, config.getSchedule().getMinute()[0]);
+    TEST_ASSERT_EQUAL_INT32(5, config.getSchedule().getSecond().size());
+    TEST_ASSERT_EQUAL_INT32(12, config.getSchedule().getSecond()[0]);
     int mp = config.getCounters()[0].getDivider();
     TEST_ASSERT_TRUE(888 == mp);
 }

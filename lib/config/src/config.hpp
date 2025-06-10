@@ -70,9 +70,9 @@ protected:
     std::vector<int> second;
 
 public:
-    const std::vector<int> &getHour() const { return (const std::vector<int>)hour; };
-    const std::vector<int> &getMinute() const { return (const std::vector<int>)minute; };
-    const std::vector<int> &getSecond() const { return (const std::vector<int>)second; };
+    const std::vector<int> &getHour() const { return const_cast<std::vector<int> &>(hour); };
+    const std::vector<int> &getMinute() const { return const_cast<std::vector<int> &>(minute); };
+    const std::vector<int> &getSecond() const { return const_cast<std::vector<int> &>(second); };
 };
 
 class Config
