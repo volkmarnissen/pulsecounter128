@@ -9,8 +9,9 @@ void ethernet_notConnected()
     TEST_ASSERT_EQUAL_PTR(nullptr, eth.init());
     // Expect No connection because of short timeout
     TEST_ASSERT_FALSE(eth.waitForConnection(10));
-    // Expect No connection if cable is attached
+    // Fails if cable is not attached
     TEST_ASSERT_TRUE(eth.waitForConnection(30000));
+    eth.deinit();
 };
 
 void network_tests()

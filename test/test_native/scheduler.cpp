@@ -5,23 +5,34 @@
 #include <sys/time.h>
 #include <ctime>
 #include <cmath>
+#include <thread>
 
-void scheduler_simple()
-{
-    Config config = Config::getConfig(readFile("cypress/fixtures/config.json").c_str());
-    Scheduler sch(const_cast<ScheduleConfig &>(config.getSchedule()));
-    sch.run();
-    sch.joinThread();
-}
-class TestScheduler : Scheduler
+class TestScheduler : public Scheduler
 {
 public:
     TestScheduler(ScheduleConfig &config) : Scheduler(config) {};
     void setHour(const std::vector<int> &_hour)
     {
+#ifdef NATIVE
         hour = _hour;
+#endif
+    }
+    void execute()
+    {
+        printf("executing\n");
     }
 };
+
+void scheduler_stopThread()
+{
+    Config config = Config::getConfig(readFile("cypress/fixtures/config.json").c_str());
+    TestScheduler sch(const_cast<ScheduleConfig &>(config.getSchedule()));
+    sch.run();
+    // No assertions required: If this test doesn't work, it will run forever
+    std::this_thread::sleep_for(std::chrono::milliseconds(30));
+    sch.stopThread();
+    sch.joinThread();
+}
 
 static void testGetMilliSecondsToNextRun(std::tm expectedTimeTm, int expectedTimeMs, std::tm testTimeTm, int testTimeMs)
 {
@@ -32,7 +43,7 @@ static void testGetMilliSecondsToNextRun(std::tm expectedTimeTm, int expectedTim
     testTime.tv_sec = std::mktime(&testTimeTm);
     testTime.tv_usec = testTimeMs * 1000; // 100ms
     Config config = Config::getConfig(readFile("cypress/fixtures/config.json").c_str());
-    Scheduler sch(const_cast<ScheduleConfig &>(config.getSchedule()));
+    TestScheduler sch(const_cast<ScheduleConfig &>(config.getSchedule()));
     int rc = sch.getMilliSecondsToNextRun(testTime);
     int millis = rc % 1000;
     time_t testTimeT = testTime.tv_sec;
@@ -96,7 +107,7 @@ void scheduler_getMilliSecondsToNextRun_NextMonth()
 }
 void scheduler_tests()
 {
-    RUN_TEST(scheduler_simple);
+    RUN_TEST(scheduler_stopThread);
     RUN_TEST(scheduler_getMilliSecondsToNextRun);
     RUN_TEST(scheduler_getMilliSecondsToNextRun_NextDay);
     RUN_TEST(scheduler_getMilliSecondsToNextRun_NextMonth);

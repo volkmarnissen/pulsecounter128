@@ -9,7 +9,7 @@
  * @param event_data The data for the event, esp_mqtt_event_handle_t.
  */
 #include "mqtt.hpp"
-
+#include <functional>
 #ifndef NATIVE
 #include "mqtt_client.h"
 #include "esp_event.h"
@@ -23,8 +23,53 @@ static void log_error_if_nonzero(const char *message, int error_code)
         ESP_LOGE(TAG, "Last error %s: 0x%x", message, error_code);
     }
 }
-static void mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_t event_id, void *event_data)
+
+MqttClient::MqttClient(const MqttConfig &config, const NetworkConfig &network)
 {
+    esp_mqtt_client_config_t mqtt_cfg{};
+    mqtt_cfg.broker.address.uri = config.getMqtturl();
+    mqtt_cfg.credentials = {};
+    mqtt_cfg.credentials.authentication = {};
+    switch (config.getAuthenticationMethod())
+    {
+    case userPassword:
+        mqtt_cfg.credentials.username = config.getUsername();
+        mqtt_cfg.credentials.authentication.password = config.getPassword();
+        break;
+    case SSL:
+        if (network.getSslCa() == nullptr || network.getSslCa()[0] == '\0')
+            ESP_LOGE(TAG, "Network Root Certificate not configured");
+        if (network.getSslHost() == nullptr || network.getSslHost()[0] == '\0')
+            ESP_LOGE(TAG, "Network Server Certificate not configured");
+        if (network.getSslHostKey() != nullptr || network.getSslHostKey()[0] == '\0')
+            ESP_LOGE(TAG, "Network Server Certificate Key not configured");
+        mqtt_cfg.broker.verification = {};
+        mqtt_cfg.broker.verification.certificate = network.getSslCa();
+        mqtt_cfg.credentials.authentication.certificate = network.getSslHost();
+        mqtt_cfg.credentials.authentication.key = network.getSslHostKey();
+        break;
+    default:
+        break;
+    };
+    client = esp_mqtt_client_init(&mqtt_cfg);
+}
+esp_err_t MqttClient::start(void)
+{
+    /* The last argument may be used to pass data to the event handler, in this example mqtt_event_handler */
+    ESP_ERROR_CHECK(esp_mqtt_client_register_event(client, (esp_mqtt_event_id_t)ESP_EVENT_ANY_ID, MqttClient::eventHandler, this));
+    esp_err_t rc = esp_mqtt_client_start(client);
+    return rc;
+}
+esp_err_t MqttClient::stop(void)
+{
+    return esp_mqtt_client_stop(client);
+}
+
+// Forwards to mqttClient->subscribeAndPublish() and onMessage();
+
+void MqttClient::eventHandler(void *handler_args, esp_event_base_t base, int32_t event_id, void *event_data)
+{
+    MqttClient *mqttClient = (MqttClient *)(handler_args);
     ESP_LOGD(TAG, "Event dispatched from event loop base=%s, event_id=%" PRIi32 "", base, event_id);
     esp_mqtt_event_handle_t event = (esp_mqtt_event_handle_t)event_data;
     esp_mqtt_client_handle_t client = event->client;
@@ -33,14 +78,7 @@ static void mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_
     {
     case MQTT_EVENT_CONNECTED:
         ESP_LOGI(TAG, "MQTT_EVENT_CONNECTED");
-        msg_id = esp_mqtt_client_publish(client, "//qos1", "data_3", 0, 1, 0);
-        ESP_LOGI(TAG, "sent publish successful, msg_id=%d", msg_id);
-
-        msg_id = esp_mqtt_client_subscribe(client, "/topic/qos1", 1);
-        ESP_LOGI(TAG, "sent subscribe successful, msg_id=%d", msg_id);
-
-        msg_id = esp_mqtt_client_unsubscribe(client, "/topic/qos1");
-        ESP_LOGI(TAG, "sent unsubscribe successful, msg_id=%d", msg_id);
+        mqttClient->subscribeAndPublish();
         break;
     case MQTT_EVENT_DISCONNECTED:
         ESP_LOGI(TAG, "MQTT_EVENT_DISCONNECTED");
@@ -59,8 +97,7 @@ static void mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_
         break;
     case MQTT_EVENT_DATA:
         ESP_LOGI(TAG, "MQTT_EVENT_DATA");
-        printf("TOPIC=%.*s\r\n", event->topic_len, event->topic);
-        printf("DATA=%.*s\r\n", event->data_len, event->data);
+        mqttClient->onMessage(event->topic, event->data);
         break;
     case MQTT_EVENT_ERROR:
         ESP_LOGI(TAG, "MQTT_EVENT_ERROR");
@@ -78,26 +115,6 @@ static void mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_
     }
 }
 
-static esp_err_t mqtt_app_start(esp_mqtt_client_handle_t client)
-{
-    /* The last argument may be used to pass data to the event handler, in this example mqtt_event_handler */
-    esp_mqtt_client_register_event(client, MQTT_EVENT_ANY, mqtt_event_handler, NULL);
-    return esp_mqtt_client_start(client);
-}
-MqttClient::MqttClient(const MqttConfig &config)
-{
-    esp_mqtt_client_config_t mqtt_cfg;
-    mqtt_cfg.broker.address.uri = config.getMqtturl();
-    config.getMqtturl();
-    client = esp_mqtt_client_init(&mqtt_cfg);
-}
-esp_err_t MqttClient::start(void)
-{
-    return mqtt_app_start(client);
-}
-esp_err_t MqttClient::stop(void)
-{
-    return esp_mqtt_client_stop(client);
-}
+// MqttClient *MqttClient::theInstance = nullptr;
 
 #endif

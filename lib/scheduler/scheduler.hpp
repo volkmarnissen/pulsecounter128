@@ -1,6 +1,7 @@
 #include <config.hpp>
 #include <thread>
 #include <ctime>
+#include <condition_variable>
 
 // template <typename T>
 // class CopyableVector : std::vector<T>
@@ -12,7 +13,16 @@
 class Scheduler
 {
     std::thread *t;
-    int getSecondsToNextRun(struct timeval currentTime);
+
+    std::condition_variable cv;
+    std::mutex cv_m; // This mutex is used for three purposes:
+                     // 1) to synchronize accesses to i
+                     // 2) to synchronize accesses to std::cerr
+                     // 3) for the condition variable cv
+
+    bool stopRequest = false;
+    void executeLocal();
+    void wait(int millis);
 #ifdef NATIVE
     // protected for native unit tests
 protected:
@@ -30,7 +40,8 @@ protected:
 public:
     Scheduler(CONST_CONFIG ScheduleConfig &_config);
     void run();
-    void execute();
+    virtual void execute() = 0;
+    void stopThread();
     void joinThread();
     int getMilliSecondsToNextRun(struct timeval currentTime);
 };

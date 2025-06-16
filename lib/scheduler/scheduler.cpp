@@ -17,11 +17,27 @@ Scheduler::Scheduler(CONST_CONFIG ScheduleConfig &config) : hour(const_cast<CONS
 void Scheduler::run()
 {
     printf("Running\n");
-    t = new std::thread(&Scheduler::execute, this);
+    t = new std::thread(&Scheduler::executeLocal, this);
 };
-void Scheduler::execute()
+void Scheduler::executeLocal()
 {
-    printf("Called\n");
+    while (!stopRequest)
+    {
+        struct timeval now;
+        gettimeofday(&now, NULL);
+        int millis(getMilliSecondsToNextRun(now));
+        std::unique_lock<std::mutex> lk(cv_m);
+        cv.wait_for(lk, std::chrono::milliseconds(millis));
+        if (!stopRequest)
+            execute();
+    }
+};
+
+void Scheduler::stopThread()
+{
+    std::lock_guard<std::mutex> lk(cv_m);
+    stopRequest = true;
+    cv.notify_one();
 };
 
 void Scheduler::joinThread()

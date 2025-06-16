@@ -9,7 +9,7 @@
 #include <lwip/dns.h>
 #include "lwip/ip4.h"
 
-static const char *TAG = "pulsecounter_eth_init";
+static const char *TAG = "network";
 
 // Define an event group for DNS resolution
 #define NETWORK_CONNECTED_BIT BIT0
