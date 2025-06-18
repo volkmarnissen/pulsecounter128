@@ -10,7 +10,13 @@
  */
 #include "mqtt.hpp"
 #include <functional>
-#ifndef NATIVE
+#ifdef NATIVE
+
+MqttClient::MqttClient(const MqttConfig &config, const NetworkConfig &network) {};
+int MqttClient::start() { return 0; };
+int MqttClient::stop() { return 0; };
+void MqttClient::publish(const char *topic, const char *payload) {};
+#else
 #include "mqtt_client.h"
 #include "esp_event.h"
 #include <esp_log.h>
@@ -53,14 +59,14 @@ MqttClient::MqttClient(const MqttConfig &config, const NetworkConfig &network)
     };
     client = esp_mqtt_client_init(&mqtt_cfg);
 }
-esp_err_t MqttClient::start(void)
+int MqttClient::start(void)
 {
     /* The last argument may be used to pass data to the event handler, in this example mqtt_event_handler */
     ESP_ERROR_CHECK(esp_mqtt_client_register_event(client, (esp_mqtt_event_id_t)ESP_EVENT_ANY_ID, MqttClient::eventHandler, this));
     esp_err_t rc = esp_mqtt_client_start(client);
     return rc;
 }
-esp_err_t MqttClient::stop(void)
+int MqttClient::stop(void)
 {
     return esp_mqtt_client_stop(client);
 }
@@ -94,6 +100,7 @@ void MqttClient::eventHandler(void *handler_args, esp_event_base_t base, int32_t
         break;
     case MQTT_EVENT_PUBLISHED:
         ESP_LOGI(TAG, "MQTT_EVENT_PUBLISHED, msg_id=%d", event->msg_id);
+        mqttClient->onPublished(event->topic, event->data);
         break;
     case MQTT_EVENT_DATA:
         ESP_LOGI(TAG, "MQTT_EVENT_DATA");
@@ -114,7 +121,11 @@ void MqttClient::eventHandler(void *handler_args, esp_event_base_t base, int32_t
         break;
     }
 }
-
+void MqttClient::publish(const char *topic, const char *payload)
+{
+    // No error handling. published will be called only in case of success
+    esp_mqtt_client_publish(client, topic, payload, strlen(payload), 1, 0);
+};
 // MqttClient *MqttClient::theInstance = nullptr;
 
 #endif

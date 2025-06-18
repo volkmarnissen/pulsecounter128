@@ -16,6 +16,7 @@ static const char *TAG = "network";
 #define TCPIP_CONNECTED_BIT BIT1
 #define DNS_BIT BIT2
 
+StaticEventGroup_t xEventGroupBuffer;
 static EventGroupHandle_t s_network_event_group;
 NetworkEventHandler *NetworkEventHandler::theInstance = nullptr;
 ;
@@ -56,27 +57,13 @@ err:
     return ret;
 }
 
-static esp_err_t example_eth_deinit(esp_eth_handle_t eth_handle)
-{
-    ESP_RETURN_ON_FALSE(eth_handle != NULL, ESP_ERR_INVALID_ARG, TAG, "Ethernet handle cannot be NULL");
-    esp_eth_mac_t *mac = NULL;
-    esp_eth_phy_t *phy = NULL;
-    if (eth_handle != NULL)
-    {
-        esp_eth_get_mac_instance(eth_handle, &mac);
-        esp_eth_get_phy_instance(eth_handle, &phy);
-        ESP_RETURN_ON_ERROR(esp_eth_driver_uninstall(eth_handle), TAG, "Ethernet %p uninstall failed", eth_handle);
-        if (mac != NULL)
-            mac->del(mac);
-        if (phy != NULL)
-            phy->del(phy);
-    }
-    return ESP_OK;
-}
-
 const char *Ethernet::init()
 {
+    ESP_LOGI(TAG, "init");
+    s_network_event_group = xEventGroupCreateStatic(&xEventGroupBuffer);
+    xEventGroupClearBits(s_network_event_group, DNS_BIT | TCPIP_CONNECTED_BIT | NETWORK_CONNECTED_BIT);
     eth_handle = eth_init_internal(NULL, NULL);
+    ntp = new NtpService(true, ntpServer);
     if (eth_handle == nullptr)
         return "Unable to initialize Ethernet Controller";
     esp_netif_config_t cfg = ESP_NETIF_DEFAULT_ETH();
@@ -98,27 +85,55 @@ const char *Ethernet::init()
         return msg;
     if (ESP_OK != esp_eth_start(eth_handle))
         return "Unable to initialize TCP/IP stack";
+    ntp->start();
     return nullptr;
 };
 
 const char *Ethernet::deinit()
 {
+    ESP_LOGI(TAG, "deinit");
+
+    vEventGroupDelete(s_network_event_group);
     ESP_LOGI(TAG, "stop and deinitialize Ethernet network...");
     // Stop Ethernet driver state machine and destroy netif
     if (ESP_OK != esp_eth_stop(eth_handle))
         return "Unable to stop Ethernet Controller";
-
+    if (ntp)
+    {
+        ntp->stop();
+        delete ntp;
+        ntp = nullptr;
+    }
     if (ESP_OK != esp_eth_del_netif_glue(eth_netif_glue))
         return "Unable to stop network interface";
     esp_netif_destroy(eth_netif);
     esp_netif_deinit();
-    if (ESP_OK != example_eth_deinit(eth_handle))
+    esp_eth_mac_t *mac = NULL;
+    esp_eth_phy_t *phy = NULL;
+    if (eth_handle != NULL)
+    {
+        esp_eth_get_mac_instance(eth_handle, &mac);
+        esp_eth_get_phy_instance(eth_handle, &phy);
+    }
+
+    if (ESP_OK != esp_eth_driver_uninstall(eth_handle))
         return "Unable to stop ethernet";
+    if (mac != NULL)
+        mac->del(mac);
+    if (phy != NULL)
+        phy->del(phy);
+
     // ESP_ERROR_CHECK(esp_event_handler_unregister(IP_EVENT, IP_EVENT_ETH_GOT_IP, got_ip_event_handler));
     if (ESP_OK != esp_event_loop_delete_default())
         return "Unable to deinitialize ethernet";
     return nullptr;
 };
+
+static esp_err_t example_eth_deinit(esp_eth_handle_t eth_handle)
+{
+    ESP_RETURN_ON_FALSE(eth_handle != NULL, ESP_ERR_INVALID_ARG, TAG, "Ethernet handle cannot be NULL");
+    return ESP_OK;
+}
 
 // Callback function to handle DNS resolution results
 static void dns_found_cb(const char *name, const ip_addr_t *ipaddr, void *callback_arg)
@@ -135,13 +150,19 @@ static void dns_found_cb(const char *name, const ip_addr_t *ipaddr, void *callba
 bool Ethernet::waitForConnection(int waitTimeMs, const char *hostname)
 {
     ip_addr_t addr;
-    s_network_event_group = xEventGroupCreate();
     // Optionally, wait for DNS resolution to complete
     const TickType_t xTicksToWait = pdMS_TO_TICKS(waitTimeMs);
     EventBits_t bits = xEventGroupWaitBits(s_network_event_group, NETWORK_CONNECTED_BIT | TCPIP_CONNECTED_BIT, false, true, xTicksToWait);
     dns_gethostbyname(hostname, &addr, dns_found_cb, nullptr);
     bits = xEventGroupWaitBits(s_network_event_group, DNS_BIT, false, true, xTicksToWait);
+    ntp->restart();
     return (bits & DNS_BIT);
+}
+bool Ethernet::waitForSntp(int waitTimeMs)
+{
+    if (ntp)
+        return ntp->wait(waitTimeMs);
+    return false;
 }
 
 static void eth_event_handler(void *arg, esp_event_base_t event_base,

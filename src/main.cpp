@@ -15,6 +15,7 @@ extern "C" void app_main()
         Pulsecounter::setOutputConfiguration(output.getPort(), output.getConfiguration());
     Ethernet eth;
     eth.setHostname(cfg.getNetwork().getHostname());
+    eth.setNtpServer(cfg.getNetwork().getNtpserver());
     eth.init();
     if (eth.waitForConnection())
     {

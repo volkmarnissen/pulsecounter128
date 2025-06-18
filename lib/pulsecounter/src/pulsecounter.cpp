@@ -21,9 +21,10 @@ static u_int16_t waitTimeInMillis = 20;
 // ULP data =============
 static bool inputsHaveRisingEdges;
 static OutputData outputData[8];
+static bool resetRequest = false;
 
 // local static data =====================
-static PulseCounterType pulseCounters[128];
+static PulseCounterType pulseCounters[maxPulseCounters];
 static std::thread *readInputThread = NULL;
 static bool runReadInputThread = false;
 
@@ -37,6 +38,12 @@ bool Pulsecounter::inputHasRisingEdge(PulseCounterType &pulseCounter)
 }
 bool Pulsecounter::readInputsRisingEdge()
 {
+   if (resetRequest)
+   {
+      for (int a = 0; a < sizeof(pulseCounters) / sizeof(pulseCounters[0]); a++)
+         pulseCounters[a].counter = 0;
+      resetRequest = false;
+   }
    inputsHaveRisingEdges = false;
    omask_t currentMask = I2c::get()->readOutputPorts();
 
@@ -87,8 +94,10 @@ void Pulsecounter::setOutputConfiguration(uint8_t port, OutputConfiguration conf
 }
 void Pulsecounter::setPulseCounter(uint8_t outputPort, uint8_t inputPort)
 {
-   pulseCounters[outputPort].numInputPort = inputPort;
-   pulseCounters[outputPort].numOutPort = outputPort;
+   int numOutputs = sizeof(outputData) / sizeof(outputData[0]);
+   pulseCounters[outputPort * numOutputs + inputPort].numInputPort = inputPort;
+   pulseCounters[outputPort * numOutputs + inputPort].numOutPort = outputPort;
+   pulseCounters[outputPort * numOutputs + inputPort].counter = 0;
 }
 void Pulsecounter::countPulses()
 {
@@ -99,6 +108,19 @@ void Pulsecounter::countPulses()
          pc.counter++;
    }
 }
+void Pulsecounter::reset()
+{
+   resetRequest = true;
+}
+
+uint32_t Pulsecounter::getCounts(uint8_t outputPort, uint8_t inputPort)
+{
+   for (int a = 0; a < sizeof(pulseCounters) / sizeof(pulseCounters[0]); a++)
+      if (pulseCounters[a].numInputPort == inputPort && pulseCounters[a].numOutPort == outputPort)
+         return pulseCounters[a].counter;
+   return 0;
+}
+
 void readInput()
 {
    if (I2c::get() == nullptr)
@@ -130,13 +152,16 @@ void readInput()
 
 void Pulsecounter::init()
 {
-   for (int a = 0; a < sizeof(outputData) / sizeof(outputData[0]); a++)
+   int numOutputs = sizeof(outputData) / sizeof(outputData[0]);
+   int numInputs = sizeof(pulseCounters[0].counter) / sizeof(pulseCounters[0].counter) / numOutputs;
+   for (int a = 0; a < numOutputs; a++)
    {
       outputData[a].maxCount = 0;
       outputData[a].currentCount = 0;
       outputData[a].previousInputMask = 0;
       outputData[a].currentInputMask = 0;
       outputData[a].outputMask = 1 << a;
+      pulseCounters[a * numOutputs].numOutPort = a;
    }
    for (int a = 0; a < sizeof(pulseCounters) / sizeof(pulseCounters[0]); a++)
    {
@@ -172,3 +197,12 @@ void Pulsecounter::joinThread()
       readInputThread = NULL;
    }
 }
+#ifdef NATIVE
+void setPulseCount(uint8_t outputPort, uint8_t inputPort, uint32_t count)
+{
+   for (int a = 0; a < sizeof(pulseCounters) / sizeof(pulseCounters[0]); a++)
+      if (pulseCounters[a].numInputPort == inputPort && pulseCounters[a].numOutPort == outputPort)
+         pulseCounters[a]
+             .counter = count;
+}
+#endif

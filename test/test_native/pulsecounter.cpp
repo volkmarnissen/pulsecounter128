@@ -33,6 +33,7 @@ void pulsecounter_simple()
     //  TEST_ASSERT_TRUE( inputHasChanged( 0,0));
     Pulsecounter::setOutputConfiguration(0, {EMeterType});
     Pulsecounter::setPulseCounter(0, 0);
+    // MockI2C in hardware.hpp
     MockI2c::mock_readInputPorts = mock_readInputPorts;
     MockI2c::mock_readOutputPorts = mock_readOutputPorts;
     MockI2c::mock_writeOutputs = mock_writeOutputs;

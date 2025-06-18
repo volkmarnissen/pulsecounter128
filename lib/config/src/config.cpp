@@ -22,6 +22,8 @@ public:
             inputPort = source["inputPort"];
         if (source.contains("divider"))
             divider = source["divider"];
+        if (source.contains("mqttname"))
+            mqttname = source["mqttname"];
     }
 };
 
@@ -51,6 +53,8 @@ public:
             sslca = source["sslca"];
         if (source.contains("hostname"))
             hostname = source["hostname"];
+        if (source.contains("ntpserver"))
+            ntpserver = source["ntpserver"];
     }
 };
 class MqttConfigLoad : public MqttConfig
@@ -60,6 +64,8 @@ public:
     {
         if (source.contains("mqtturl"))
             mqtturl = source["mqtturl"];
+        if (source.contains("topic"))
+            topic = source["topic"];
         if (source.contains("username"))
             username = source["username"];
         if (source.contains("password"))

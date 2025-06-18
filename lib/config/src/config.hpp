@@ -25,11 +25,13 @@ protected:
     int inputPort;
     int outputPort;
     int divider;
+    std::string mqttname;
 
 public:
     int getInputPort() const { return inputPort; };
     int getOutputPort() const { return outputPort; };
     int getDivider() const { return divider; };
+    const char *getMqttName() const { return mqttname.c_str(); };
 };
 
 class NetworkConfig
@@ -39,24 +41,28 @@ protected:
     std::string sslhost;
     std::string sslhostkey;
     std::string sslca;
+    std::string ntpserver;
 
 public:
     const char *getSslHost() const { return sslhost.c_str(); };
     const char *getSslHostKey() const { return sslhostkey.c_str(); };
     const char *getSslCa() const { return sslca.c_str(); };
     const char *getHostname() const { return hostname.c_str(); };
+    const char *getNtpserver() const { return ntpserver.c_str(); };
 };
 
 class MqttConfig
 {
 protected:
     std::string mqtturl;
+    std::string topic;
     std::string username;
     std::string password;
     AuthenticationMethod authenticationMethod;
 
 public:
     const char *getMqtturl() const { return mqtturl.c_str(); };
+    const char *getTopic() const { return topic.c_str(); };
     const char *getUsername() const { return username.c_str(); };
     const char *getPassword() const { return password.c_str(); };
     AuthenticationMethod getAuthenticationMethod() const { return authenticationMethod; };
