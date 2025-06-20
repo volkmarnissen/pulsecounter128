@@ -33,6 +33,7 @@
     "mqtturl": "mqtts://blabla",
     "username": "Hugo",
     "password": "abcd1234",
+    "topic": "pulsecounter",
     "authenticationMethod": 0
   },
   "schedule": {
