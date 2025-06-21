@@ -5,90 +5,97 @@
 #include <nvs.h>
 #endif
 #include <stdexcept>
-#include "nlohmann/json.hpp"
+#include "ArduinoJson.h"
 static const char *tag = "config";
 #define STORAGE_NAMESPACE "nvs"
 static const char *storageKey = "config";
 static const char *emptyJson = "{ \"counters\" : [], \"outputs\" : [],\"network\":{\"hostname\" : \"plscount\"},\
 \"mqtt\": { \"topic\": \"plscount\"}\
 \"schedule\":{\"hour\" : [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23]},{\"minute\" : [0]},{\"second\" : [0]}}";
+
+static void setValueString(std::string &value, const JsonObject &source, std::string name)
+{
+    if (source[name].is<std::string>())
+        value = source[name].as<std::string>();
+    else
+        value = "";
+};
+
+static void setValueInt(int &value, const JsonObject &source, const std::string name)
+{
+    if (source[name].is<int>())
+        value = source[name].as<int>();
+    else
+        value = 0;
+};
+static void setValueIntArray(std::vector<int> &value, const JsonObject &source, const std::string name)
+{
+    if (source[name].is<JsonArray>())
+    {
+        JsonArray a = source["hour"].as<JsonArray>();
+        for (auto h : a)
+            value.push_back(h);
+    }
+}
+
 class CounterConfigLoad : public CounterConfig
 {
 public:
-    CounterConfigLoad(nlohmann::json source)
+    CounterConfigLoad(const JsonObject &source)
     {
-        if (source.contains("outputPort"))
-            outputPort = source["outputPort"];
-        if (source.contains("inputPort"))
-            inputPort = source["inputPort"];
-        if (source.contains("divider"))
-            divider = source["divider"];
-        if (source.contains("mqttname"))
-            mqttname = source["mqttname"];
+        setValueInt(outputPort, source, "outputPort");
+        setValueInt(inputPort, source, "inputPort");
+        setValueInt(divider, source, "divider");
     }
 };
 
 class OutputConfigLoad : public OutputConfig
 {
 public:
-    OutputConfigLoad(nlohmann::json source)
+    OutputConfigLoad() {};
+    OutputConfigLoad(const JsonObject &source)
     {
 
-        if (source.contains("type"))
-            config.type = source["type"];
-        if (source.contains("port"))
-            port = source["port"];
+        setValueInt((int &)config.type, source, "type");
+        setValueInt(port, source, "port");
     };
 };
 
 class NetworkConfigLoad : public NetworkConfig
 {
 public:
-    NetworkConfigLoad(nlohmann::json source)
+    NetworkConfigLoad() {};
+    NetworkConfigLoad(const JsonObject &source)
     {
-        if (source.contains("sslhost"))
-            sslhost = source["sslhost"];
-        if (source.contains("sslhostkey"))
-            sslhostkey = source["sslhostkey"];
-        if (source.contains("sslca"))
-            sslca = source["sslca"];
-        if (source.contains("hostname"))
-            hostname = source["hostname"];
-        if (source.contains("ntpserver"))
-            ntpserver = source["ntpserver"];
+        setValueString(sslhost, source, "sslhost");
+        setValueString(sslhostkey, source, "sslhostkey");
+        setValueString(sslca, source, "sslca");
+        setValueString(hostname, source, "hostname");
+        setValueString(ntpserver, source, "ntpserver");
     }
 };
 class MqttConfigLoad : public MqttConfig
 {
 public:
-    MqttConfigLoad(nlohmann::json source)
+    MqttConfigLoad() {};
+    MqttConfigLoad(const JsonObject &source)
     {
-        if (source.contains("mqtturl"))
-            mqtturl = source["mqtturl"];
-        if (source.contains("topic"))
-            topic = source["topic"];
-        if (source.contains("username"))
-            username = source["username"];
-        if (source.contains("password"))
-            password = source["password"];
-        if (source.contains("authenticationMethod"))
-            authenticationMethod = source["authenticationMethod"];
+        setValueString(mqtturl, source, "mqtturl");
+        setValueString(topic, source, "topic");
+        setValueString(username, source, "username");
+        setValueString(password, source, "password");
+        setValueInt((int &)authenticationMethod, source, "authenticationMethod");
     }
 };
 class ScheduleConfigLoad : public ScheduleConfig
 {
 public:
-    ScheduleConfigLoad(nlohmann::json source)
+    ScheduleConfigLoad() {};
+    ScheduleConfigLoad(const JsonObject &source)
     {
-        if (source.contains("hour"))
-            for (auto h : source["hour"])
-                hour.push_back(h);
-        if (source.contains("minute"))
-            for (auto m : source["minute"])
-                minute.push_back(m);
-        if (source.contains("second"))
-            for (auto s : source["second"])
-                second.push_back(s);
+        setValueIntArray(hour, source, "hour");
+        setValueIntArray(minute, source, "minute");
+        setValueIntArray(second, source, "second");
     }
 };
 class ConfigLoad : public Config
@@ -96,45 +103,69 @@ class ConfigLoad : public Config
 public:
     bool load(const char *buffer)
     {
-        auto json = nlohmann::json::parse(buffer);
-        // json["numOfQues"] << "\n";
-        if (json.contains("counters"))
+        fprintf(stderr, "parsing %s\r\n", buffer);
+        try
         {
-            for (auto counter : json["counters"])
-                counters.push_back(CounterConfigLoad(counter));
+
+            JsonDocument doc = J;
+            DeserializationError error = deserializeJson(doc, buffer);
+            if (error)
+            {
+                fprintf(stderr, "deserializeJson() failed: %s", error.c_str());
+                return false;
+            }
+            fprintf(stderr, "\r\nend parsing\r\n");
+            // json["numOfQues"] << "\n";
+            if (doc.containsKey("counters"))
+            {
+                fprintf(stderr, "counters\r\n");
+                const JsonArray a = doc["counters"].to<JsonArray>();
+                for (auto counter : a)
+                    counters.push_back(CounterConfigLoad(counter.as<JsonObject>()));
+            }
+            if (doc.containsKey("outputs"))
+            {
+                fprintf(stderr, "outputs\r\n");
+                JsonArray a = doc["outputs"];
+                for (auto output : a)
+                    outputs.push_back(OutputConfigLoad(output.as<JsonObject>()));
+            }
+            else
+            {
+                loge(tag, "No output ports specified in configuration");
+                return false;
+            };
+            fprintf(stderr, "network\r\n");
+            if (doc.containsKey("network"))
+                network = NetworkConfigLoad(doc["network"].as<JsonObject>());
+            else
+            {
+                loge(tag, "No network configuration specified in configuration");
+                return false;
+            };
+            fprintf(stderr, "mqtt\r\n");
+            if (doc.containsKey("mqtt"))
+                mqtt = MqttConfigLoad(doc["mqtt"].as<JsonObject>());
+            else
+            {
+                loge(tag, "No MQTT configuration specified in configuration");
+                return false;
+            };
+            fprintf(stderr, "schedule\r\n");
+            if (doc.containsKey("schedule"))
+                schedule = ScheduleConfigLoad(doc["schedule"].as<JsonObject>());
+            else
+            {
+                loge(tag, "No Schedule configuration specified in configuration");
+                return false;
+            };
+            return true;
         }
-        if (json.contains("outputs"))
+        catch (std::exception &e)
         {
-            for (auto counter : json["counters"])
-                outputs.push_back(OutputConfigLoad(counter));
-        }
-        else
-        {
-            loge(tag, "No output ports specified in configuration");
+            fprintf(stderr, "Exception: %s\n", e.what());
             return false;
         };
-        if (json.contains("network"))
-            network = NetworkConfigLoad(json["network"]);
-        else
-        {
-            loge(tag, "No network configuration specified in configuration");
-            return false;
-        };
-        if (json.contains("mqtt"))
-            mqtt = MqttConfigLoad(json["mqtt"]);
-        else
-        {
-            loge(tag, "No MQTT configuration specified in configuration");
-            return false;
-        };
-        if (json.contains("schedule"))
-            schedule = ScheduleConfigLoad(json["schedule"]);
-        else
-        {
-            loge(tag, "No Schedule configuration specified in configuration");
-            return false;
-        };
-        return true;
     };
 };
 
@@ -142,9 +173,13 @@ Config theConfiguration;
 
 const Config &Config::getConfig(const char *jsonContent)
 {
+    fprintf(stderr, "getContent\n");
+
     if (jsonContent != NULL)
     {
-        auto c = ConfigLoad();
+        fprintf(stderr, "constructor\n");
+        ConfigLoad c;
+        fprintf(stderr, "load\n");
         c.load(jsonContent);
         theConfiguration = c;
     }

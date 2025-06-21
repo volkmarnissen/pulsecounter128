@@ -153,7 +153,6 @@ void readInput()
 void Pulsecounter::init()
 {
    int numOutputs = sizeof(outputData) / sizeof(outputData[0]);
-   int numInputs = sizeof(pulseCounters[0].counter) / sizeof(pulseCounters[0].counter) / numOutputs;
    for (int a = 0; a < numOutputs; a++)
    {
       outputData[a].maxCount = 0;

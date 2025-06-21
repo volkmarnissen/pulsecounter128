@@ -61,7 +61,6 @@ int getIndex(const std::vector<int> &v, int searchObject)
 int getNextTime(const std::vector<int> &v, int current, int max)
 {
     int idx = getIndex(v, current);
-    int nextTime = -1;
     while (idx == -1 && current < max)
         idx = getIndex(v, ++current);
     if (idx == -1)

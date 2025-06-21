@@ -32,10 +32,14 @@ static void log_error_if_nonzero(const char *message, int error_code)
 
 MqttClient::MqttClient(const MqttConfig &config, const NetworkConfig &network)
 {
+    ESP_LOGI(TAG, "Constructr MqttClient");
     esp_mqtt_client_config_t mqtt_cfg{};
     mqtt_cfg.broker.address.uri = config.getMqtturl();
     mqtt_cfg.credentials = {};
     mqtt_cfg.credentials.authentication = {};
+    if (clientId != "")
+        mqtt_cfg.credentials.client_id = (std::string(network.getHostname()) + clientId).c_str();
+
     switch (config.getAuthenticationMethod())
     {
     case userPassword:
@@ -72,14 +76,21 @@ int MqttClient::stop(void)
 }
 
 // Forwards to mqttClient->subscribeAndPublish() and onMessage();
+void MqttClient::logerror(const char *message, unsigned int code)
+{
+    if (code != ESP_OK)
+    {
+        this->onError(message, code);
+        log_error_if_nonzero(message, code);
+    }
+}
 
 void MqttClient::eventHandler(void *handler_args, esp_event_base_t base, int32_t event_id, void *event_data)
 {
     MqttClient *mqttClient = (MqttClient *)(handler_args);
     ESP_LOGD(TAG, "Event dispatched from event loop base=%s, event_id=%" PRIi32 "", base, event_id);
     esp_mqtt_event_handle_t event = (esp_mqtt_event_handle_t)event_data;
-    esp_mqtt_client_handle_t client = event->client;
-    int msg_id;
+    int msg_id = event->msg_id;
     switch ((esp_mqtt_event_id_t)event_id)
     {
     case MQTT_EVENT_CONNECTED:
@@ -110,10 +121,11 @@ void MqttClient::eventHandler(void *handler_args, esp_event_base_t base, int32_t
         ESP_LOGI(TAG, "MQTT_EVENT_ERROR");
         if (event->error_handle->error_type == MQTT_ERROR_TYPE_TCP_TRANSPORT)
         {
-            log_error_if_nonzero("reported from esp-tls", event->error_handle->esp_tls_last_esp_err);
-            log_error_if_nonzero("reported from tls stack", event->error_handle->esp_tls_stack_err);
-            log_error_if_nonzero("captured as transport's socket errno", event->error_handle->esp_transport_sock_errno);
-            ESP_LOGI(TAG, "Last errno string (%s)", strerror(event->error_handle->esp_transport_sock_errno));
+
+            mqttClient->logerror("reported from esp-tls", event->error_handle->esp_tls_last_esp_err);
+            mqttClient->logerror("reported from tls stack", event->error_handle->esp_tls_stack_err);
+            mqttClient->logerror("captured as transport's socket errno", event->error_handle->esp_transport_sock_errno);
+            mqttClient->logerror(strerror(event->error_handle->esp_transport_sock_errno), event->error_handle->esp_transport_sock_errno);
         }
         break;
     default:

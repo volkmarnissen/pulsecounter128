@@ -18,7 +18,8 @@ public:
     void publish(const char *topic, const char *payload);
 
 public:
-    PulseCounterScheduler(const Config &_config) : config(_config), Scheduler(const_cast<CONST_CONFIG ScheduleConfig &>(_config.getSchedule())) {};
+    PulseCounterScheduler(const Config &_config) : Scheduler(const_cast<CONST_CONFIG ScheduleConfig &>(_config.getSchedule())), config(_config) {};
+    const char *isConfigured() const;
     void execute();
     void reset();
 };

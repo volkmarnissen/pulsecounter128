@@ -16,7 +16,15 @@ void config_simple()
     int mp = config.getCounters()[0].getDivider();
     TEST_ASSERT_TRUE(888 == mp);
 }
+void config_lohmann()
+{
+
+    Config config = Config::getConfig(readFile("cypress/fixtures/configlohmann.json").c_str());
+    TEST_ASSERT_EQUAL_INT32(0, config.getSchedule().getHour().size());
+}
+
 void config_tests()
 {
+    RUN_TEST(config_lohmann);
     RUN_TEST(config_simple);
 }

@@ -129,12 +129,6 @@ const char *Ethernet::deinit()
     return nullptr;
 };
 
-static esp_err_t example_eth_deinit(esp_eth_handle_t eth_handle)
-{
-    ESP_RETURN_ON_FALSE(eth_handle != NULL, ESP_ERR_INVALID_ARG, TAG, "Ethernet handle cannot be NULL");
-    return ESP_OK;
-}
-
 // Callback function to handle DNS resolution results
 static void dns_found_cb(const char *name, const ip_addr_t *ipaddr, void *callback_arg)
 {

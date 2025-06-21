@@ -6,7 +6,7 @@ extern void pcscheduler_tests();
 void alltests()
 {
     pulsecounter_tests();
-    // config_tests();
+    config_tests();
     scheduler_tests();
     pcscheduler_tests();
 }

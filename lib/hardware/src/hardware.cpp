@@ -131,10 +131,8 @@ imask_t I2c::readInputPorts()
 
 void I2c::writeOutputs(omask_t mask)
 {
-    ESP_LOGI(TAG, "writing to 0x%02X\n", dev_handleWrites->addr);
     if (ESP_OK != pcf8574_port_write(dev_handleWrites, mask))
         ESP_LOGE("I2C", "Unable to write to I2C");
-    ESP_LOGI(TAG, "wrote");
 };
 
 const int readAddresses[] = {i2cAddressInputs1_8, i2cAddressInputs9_16};
