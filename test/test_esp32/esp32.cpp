@@ -9,10 +9,10 @@ extern void mqtt_tests();
 
 void alltests()
 {
-    // network_tests();
+    network_tests();
     config_tests();
-    // hardware_tests();
-    //  mqtt_tests();
+    hardware_tests();
+    mqtt_tests();
 }
 void setUp()
 {
