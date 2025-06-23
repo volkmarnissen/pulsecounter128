@@ -1,7 +1,7 @@
 #include <unity.h>
 #include "config.hpp"
 #include "native.hpp"
-
+#include "ArduinoJson.h"
 void config_simple()
 {
 
@@ -23,8 +23,24 @@ void config_lohmann()
     TEST_ASSERT_EQUAL_INT32(0, config.getSchedule().getHour().size());
 }
 
+void config_jsonCheck()
+{
+
+    ;
+    JsonDocument doc;
+    DeserializationError error = deserializeJson(doc, readFile("cypress/fixtures/config.json"));
+    if (error)
+    {
+        fprintf(stderr, "deserializeJson() failed: %s", error.c_str());
+    }
+    std::string out;
+    serializeJson(doc, out);
+    fprintf(stderr, "serializeJson: %s", out.c_str());
+}
+
 void config_tests()
 {
+    // RUN_TEST(config_jsonCheck);
     RUN_TEST(config_lohmann);
     RUN_TEST(config_simple);
 }

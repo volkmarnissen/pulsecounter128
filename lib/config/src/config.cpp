@@ -30,11 +30,11 @@ static void setValueInt(int &value, const JsonObject &source, const std::string 
 };
 static void setValueIntArray(std::vector<int> &value, const JsonObject &source, const std::string name)
 {
-    if (source[name].is<JsonArray>())
+    if (source[name])
     {
-        JsonArray a = source["hour"].as<JsonArray>();
-        for (auto h : a)
-            value.push_back(h);
+        JsonDocument a = (source[name]);
+        for (int i = 0; i < a.size(); i++)
+            value.push_back(a[i].as<int>());
     }
 }
 
@@ -43,6 +43,7 @@ class CounterConfigLoad : public CounterConfig
 public:
     CounterConfigLoad(const JsonObject &source)
     {
+        setValueString(mqttname, source, "mqttname");
         setValueInt(outputPort, source, "outputPort");
         setValueInt(inputPort, source, "inputPort");
         setValueInt(divider, source, "divider");
@@ -103,56 +104,51 @@ class ConfigLoad : public Config
 public:
     bool load(const char *buffer)
     {
-        fprintf(stderr, "parsing %s\r\n", buffer);
         try
         {
 
-            JsonDocument doc = J;
+            JsonDocument doc;
             DeserializationError error = deserializeJson(doc, buffer);
             if (error)
             {
                 fprintf(stderr, "deserializeJson() failed: %s", error.c_str());
                 return false;
             }
-            fprintf(stderr, "\r\nend parsing\r\n");
             // json["numOfQues"] << "\n";
-            if (doc.containsKey("counters"))
+            if (doc["counters"].is<JsonArray>())
             {
-                fprintf(stderr, "counters\r\n");
-                const JsonArray a = doc["counters"].to<JsonArray>();
-                for (auto counter : a)
-                    counters.push_back(CounterConfigLoad(counter.as<JsonObject>()));
+                JsonDocument countersArray = (doc["counters"]);
+                for (int i = 0; i < countersArray.size(); i++)
+                {
+                    counters.push_back(CounterConfigLoad(countersArray[i].as<JsonObject>()));
+                }
             }
-            if (doc.containsKey("outputs"))
+            if (doc["outputs"].is<JsonArray>())
             {
-                fprintf(stderr, "outputs\r\n");
-                JsonArray a = doc["outputs"];
-                for (auto output : a)
-                    outputs.push_back(OutputConfigLoad(output.as<JsonObject>()));
+                JsonDocument outputsArray = doc["outputs"];
+                for (int i = 0; i < outputsArray.size(); i++)
+                    outputs.push_back(OutputConfigLoad(outputsArray[i].as<JsonObject>()));
             }
-            else
-            {
-                loge(tag, "No output ports specified in configuration");
-                return false;
-            };
-            fprintf(stderr, "network\r\n");
-            if (doc.containsKey("network"))
+            // else
+            // {
+            //     loge(tag, "No output ports specified in configuration");
+            //     return false;
+            // };
+            if (doc["network"].is<JsonObject>())
                 network = NetworkConfigLoad(doc["network"].as<JsonObject>());
             else
             {
                 loge(tag, "No network configuration specified in configuration");
                 return false;
             };
-            fprintf(stderr, "mqtt\r\n");
-            if (doc.containsKey("mqtt"))
+            if (doc["mqtt"].is<JsonObject>())
                 mqtt = MqttConfigLoad(doc["mqtt"].as<JsonObject>());
             else
             {
                 loge(tag, "No MQTT configuration specified in configuration");
                 return false;
             };
-            fprintf(stderr, "schedule\r\n");
-            if (doc.containsKey("schedule"))
+            if (doc["schedule"].is<JsonObject>())
                 schedule = ScheduleConfigLoad(doc["schedule"].as<JsonObject>());
             else
             {
@@ -173,13 +169,10 @@ Config theConfiguration;
 
 const Config &Config::getConfig(const char *jsonContent)
 {
-    fprintf(stderr, "getContent\n");
 
     if (jsonContent != NULL)
     {
-        fprintf(stderr, "constructor\n");
         ConfigLoad c;
-        fprintf(stderr, "load\n");
         c.load(jsonContent);
         theConfiguration = c;
     }
