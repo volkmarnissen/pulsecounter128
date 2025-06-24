@@ -83,6 +83,8 @@ public:
     {
         setValueString(mqtturl, source, "mqtturl");
         setValueString(topic, source, "topic");
+        if (topic == "")
+            topic = "plscount";
         setValueString(username, source, "username");
         setValueString(password, source, "password");
         setValueInt((int &)authenticationMethod, source, "authenticationMethod");

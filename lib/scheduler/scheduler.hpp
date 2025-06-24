@@ -31,14 +31,15 @@ protected:
     std::vector<int> &second;
 #define CONST_CONFIG
 #else
-    const std::vector<int> &hour;
-    const std::vector<int> &minute;
-    const std::vector<int> &second;
+    std::vector<int> &hour;
+    std::vector<int> &minute;
+    std::vector<int> &second;
 #define CONST_CONFIG const
 #endif
 
 public:
     Scheduler(CONST_CONFIG ScheduleConfig &_config);
+    void setConfig(CONST_CONFIG ScheduleConfig &config);
     void run();
     virtual void execute() = 0;
     void stopThread();

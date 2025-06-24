@@ -36,6 +36,21 @@ bool Pulsecounter::inputHasRisingEdge(PulseCounterType &pulseCounter)
    imask_t cMask = outputData[pulseCounter.numOutPort].currentInputMask & (1 << pulseCounter.numInputPort);
    return (cMask & (~pMask)) > 0;
 }
+void Pulsecounter::setConfig(const Config &cfg)
+{
+   for (auto counter : cfg.getCounters())
+      Pulsecounter::setPulseCounter(counter.getOutputPort(), counter.getInputPort());
+   for (auto output : cfg.getOutputs())
+      Pulsecounter::setOutputConfiguration(output.getPort(), output.getConfiguration());
+   Pulsecounter::init();
+   if (readInputThread != NULL)
+   {
+      Pulsecounter::stopThread();
+      Pulsecounter::joinThread();
+      Pulsecounter::startThread();
+   }
+}
+
 bool Pulsecounter::readInputsRisingEdge()
 {
    if (resetRequest)

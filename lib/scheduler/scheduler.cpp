@@ -9,10 +9,21 @@
 // {
 // }
 
-Scheduler::Scheduler(CONST_CONFIG ScheduleConfig &config) : hour(const_cast<CONST_CONFIG std::vector<int> &>(config.getHour())),
-                                                            minute(const_cast<CONST_CONFIG std::vector<int> &>(config.getMinute())),
-                                                            second(const_cast<CONST_CONFIG std::vector<int> &>(config.getSecond())) {
+Scheduler::Scheduler(CONST_CONFIG ScheduleConfig &config) : hour(const_cast<std::vector<int> &>(config.getHour())),
+                                                            minute(const_cast<std::vector<int> &>(config.getMinute())),
+                                                            second(const_cast<std::vector<int> &>(config.getSecond())) {
                                                             };
+
+void Scheduler::setConfig(CONST_CONFIG ScheduleConfig &config)
+{
+    hour = const_cast<std::vector<int> &>(config.getHour());
+    minute = const_cast<std::vector<int> &>(config.getMinute());
+    second = const_cast<std::vector<int> &>(config.getSecond());
+    stopThread();
+    joinThread();
+    stopRequest = false;
+    run();
+};
 
 void Scheduler::run()
 {

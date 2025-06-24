@@ -123,9 +123,9 @@ imask_t I2c::readInputPorts()
     imask_t rc;
     unsigned char *rdBuf = (unsigned char *)&rc;
     if (ESP_OK != pcf8574_port_read(dev_handleReads, rdBuf))
-        ESP_LOGE("I2C", "Unable to read to I2C");
+        ESP_LOGE("I2C", "readInputPorts: Unable to read from I2C");
     if (ESP_OK != pcf8574_port_read(dev_handleReads + 1, rdBuf + 1))
-        ESP_LOGE("I2C", "Unable to read to I2C");
+        ESP_LOGE("I2C", "readInputPorts: Unable to read from I2C");
     return rc;
 };
 

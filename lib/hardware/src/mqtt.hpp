@@ -10,6 +10,7 @@ class MqttClient
 
 protected:
     MqttClient(const MqttConfig &config, const NetworkConfig &network);
+    virtual ~MqttClient();
     std::string clientId;
 #ifndef NATIVE
     esp_mqtt_client_handle_t client;
@@ -22,7 +23,7 @@ protected:
 
 public:
     int start();
-    int stop();
+    virtual int stop();
     // static MqttClient &getMqttClient(const MqttConfig &config)
     // {
     //     if (theInstance == nullptr)

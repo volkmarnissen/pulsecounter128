@@ -7,19 +7,23 @@ typedef struct
     u_int8_t outputPort;
     float counts[16];
 } CountersStorage;
+class PCMqttClient;
 class PulseCounterScheduler : public Scheduler
 {
+    static PCMqttClient *mqttClient;
 #ifdef NATIVE
 public:
 #endif
-    const Config &config;
+    Config &config;
     void storePulseCounts(time_t date) const;
     std::string generatePayload() const;
-    void publish(const char *topic, const char *payload);
+    int publish(const char *topic, const char *payload);
 
 public:
-    PulseCounterScheduler(const Config &_config) : Scheduler(const_cast<CONST_CONFIG ScheduleConfig &>(_config.getSchedule())), config(_config) {};
-    const char *isConfigured() const;
+    PulseCounterScheduler(Config &_config);
+    void setConfig(const Config &config);
+
+    const char *checkConfiguration(const Config &_config) const;
     void execute();
     void reset();
 };

@@ -58,11 +58,13 @@ void Webserver::start(const char *serverCert, const char *caCert, const unsigned
 }
 esp_err_t Webserver::registerUriHandler(httpd_uri_t *uriHandler)
 {
+    httpd_unregister_uri_handler(handle, uriHandler->uri, uriHandler->method);
     return httpd_register_uri_handler(handle, uriHandler);
 };
 
 void Webserver::stop()
 {
+    ESP_LOGI(TAG, "Webserver stop: %ld %s", (long)handle, isSsl ? "SSL" : "HTTP");
     // Stop the httpd server
     if (handle != NULL)
     {

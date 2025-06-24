@@ -5,6 +5,8 @@
 #include "hardware.hpp"
 #include "esp_https_server.h"
 #include <string>
+#include <chrono>
+#include <thread>
 #include "websrvplscount.hpp"
 #include "config.hpp"
 #include "mqtt.hpp"
@@ -15,6 +17,7 @@ static const int SCRATCH_BUFSIZE = 8192;
 extern const char _binary_index_html_start[] asm("_binary_index_html_start");
 extern const char _binary_pulse_css_start[] asm("_binary_pulse_css_start");
 extern const char _binary_pulse_js_start[] asm("_binary_pulse_js_start");
+extern void reconfigure();
 
 static esp_err_t getHandler(httpd_req_t *r)
 {
@@ -37,33 +40,40 @@ class ValidationMqttClient : public MqttClient
     const char *content;
 
 public:
-    ValidationMqttClient(httpd_req_t *_req, const char *_content, const MqttConfig &config, const NetworkConfig &network) : MqttClient(config, network), req(_req), content(_content)
+    bool reconfigureRequest;
+    virtual ~ValidationMqttClient()
     {
-        ESP_LOGI(TAG, "constructor");
+        if (content)
+            free((void *)content);
+    };
+    ValidationMqttClient(httpd_req_t *_req, const char *_content, const MqttConfig &config, const NetworkConfig &network) : MqttClient(config, network), req(_req), content(_content), reconfigureRequest(false)
+    {
         clientId = "validation";
     }
-    void subscribeAndPublish()
+    virtual void subscribeAndPublish()
     {
-        ESP_LOGI(TAG, "subscribeAndPublish");
         Config::setJson(content);
         httpd_resp_set_hdr(req, "Content-Type", "application/json");
         httpd_resp_send(req, "", HTTPD_RESP_USE_STRLEN);
-        stop();
+        reconfigureRequest = true;
     }
-    void onError(const char *message, unsigned int code)
+    virtual void onError(const char *message, unsigned int code)
     {
-        ESP_LOGI(TAG, "onError");
         char buf[512];
         sprintf(buf, "[{ \"errorcode\": %d, \"errormessage\": \"%s\"}]", code, message);
         httpd_resp_set_hdr(req, "Content-Type", "application/json");
         httpd_resp_set_status(req, "422 Unprocessable Entity");
         httpd_resp_send(req, buf, HTTPD_RESP_USE_STRLEN);
-        stop();
+    }
+    int stop()
+    {
+        int rc = MqttClient::stop();
+        delete this;
+        return rc;
     }
 };
 static esp_err_t postConfigHandler(httpd_req_t *req)
 {
-    ESP_LOGI(TAG, "Receiving configuration");
     int received;
     int remaining = req->content_len;
     char *content = (char *)malloc(remaining + 1);
@@ -71,13 +81,11 @@ static esp_err_t postConfigHandler(httpd_req_t *req)
     while (remaining > 0)
     {
 
-        ESP_LOGI(TAG, "Remaining size : %d", remaining);
         if ((received = httpd_req_recv(req, content + receivedTotal, std::min(remaining, SCRATCH_BUFSIZE))) < 0)
         {
             /* Retry if timeout occurred */
             if (received == HTTPD_SOCK_ERR_TIMEOUT)
                 continue;
-            ESP_LOGE(TAG, "Reception failed! %d %s", received, content);
             free(content);
             /* In case of unrecoverable error, close and delete the unfinished file*/
             /* Respond with 500 Internal Server Error */
@@ -95,10 +103,12 @@ static esp_err_t postConfigHandler(httpd_req_t *req)
     // create an mqtt client and initialize it the callbacks will send a response
     // and store the new content
     ValidationMqttClient client(req, content, newCfg.getMqtt(), newCfg.getNetwork());
-    ESP_LOGI(TAG, "Starting validation");
-    client.start();
-    ESP_LOGI(TAG, "Started validation");
-    free(content);
+    if (0 == client.start())
+    {
+        std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+        if (client.reconfigureRequest && req->user_ctx != nullptr)
+            ((WebserverPulsecounter *)req->user_ctx)->reconfigureRequest = true;
+    }
     return ESP_OK;
 };
 
@@ -115,12 +125,25 @@ static httpd_uri_t postConfigUri = {
     .method = HTTP_POST,
     .handler = postConfigHandler,
     .user_ctx = NULL};
+void WebserverPulsecounter::setConfig(const NetworkConfig &config)
+{
+    server.stop();
+    // TODO: Add ssl parameter later
+    ESP_LOGI(TAG, "Stopped Web Server");
+    WebserverPulsecounter::start();
+}
 
 void WebserverPulsecounter::start(const char *serverCert, const char *caCert, const unsigned char *privateKey)
 {
+    ESP_LOGI(TAG, "starting web server");
+    reconfigureRequest = false;
     server.start(serverCert, caCert, privateKey);
-    ESP_ERROR_CHECK(server.registerUriHandler(&indexUri));
-    ESP_ERROR_CHECK(server.registerUriHandler(&postConfigUri));
+    indexUri.user_ctx = this;
+    postConfigUri.user_ctx = this;
+    if (0 != server.registerUriHandler(&indexUri))
+        ESP_LOGE(TAG, "unable to register %s", indexUri.uri);
+    if (0 != server.registerUriHandler(&postConfigUri))
+        ESP_LOGE(TAG, "unable to register %s", postConfigUri.uri);
 };
 void WebserverPulsecounter::stop()
 {

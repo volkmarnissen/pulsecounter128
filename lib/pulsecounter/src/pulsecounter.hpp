@@ -17,6 +17,7 @@ namespace Pulsecounter
   extern void readPorts(OutputConfigurationType type);
   extern void setOutputConfiguration(uint8_t port, OutputConfiguration config);
   extern void init();
+  extern void setConfig(const Config &cfg);
   extern void joinThread();
   extern void stopThread();
   extern void startThread();

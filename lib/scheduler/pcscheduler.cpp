@@ -3,8 +3,17 @@
 #include "mqtt.hpp"
 #include <stdio.h>
 #include <string.h>
+#include <chrono>
+#include <thread>
+
 static CountersStorage countersStorage[128];
 static uint8_t counterStorageCount = 0;
+
+PCMqttClient *PulseCounterScheduler::mqttClient = nullptr;
+
+PulseCounterScheduler::PulseCounterScheduler(Config &_config) : Scheduler(const_cast<CONST_CONFIG ScheduleConfig &>(_config.getSchedule())), config(_config) {
+                                                                };
+
 // Save current pulse counts send to MQTT
 void PulseCounterScheduler::execute()
 {
@@ -17,6 +26,12 @@ void PulseCounterScheduler::execute()
     // counterStorageCount = 0
     // Failure:
     //  Just continue.
+}
+
+void PulseCounterScheduler::setConfig(const Config &_config)
+{
+    config = _config;
+    Scheduler::setConfig(config.getSchedule());
 }
 
 void PulseCounterScheduler::storePulseCounts(time_t date) const
@@ -74,11 +89,8 @@ protected:
     virtual void onPublished(const char *topic, const char *payload)
     {
         scheduler.reset();
-        stop();
     };
-    virtual void onError(const char *message, unsigned int code)
-    {
-        stop();
+    virtual void onError(const char *message, unsigned int code) {
     };
 
 public:
@@ -91,12 +103,42 @@ void PulseCounterScheduler::reset()
     counterStorageCount = 0;
 }
 
-void PulseCounterScheduler::publish(const char *topic, const char *payload)
+int PulseCounterScheduler::publish(const char *topic, const char *payload)
 {
-    PCMqttClient mqttClient(config, *this);
-    mqttClient.start();
-    mqttClient.publish(topic, payload);
+    int rc = 3;
+    if (PulseCounterScheduler::mqttClient != nullptr)
+        return rc;
+    PulseCounterScheduler::mqttClient = new PCMqttClient(config, *this);
+    if (topic == nullptr || topic[0] == '\0')
+    {
+        fprintf(stderr, "PCScheduler: No topic passed to publish %s", payload);
+        rc = 1;
+    }
+    else if (payload == nullptr || payload[0] == '\0')
+    {
+        fprintf(stderr, "PCScheduler: No payload passed for topic %s", topic);
+        rc = 1;
+    }
+    else if (0 == PulseCounterScheduler::mqttClient->start())
+    {
+        using namespace std::chrono_literals;
+        PulseCounterScheduler::mqttClient->publish(topic, payload);
+        std::this_thread::sleep_for(std::chrono::milliseconds(400));
+
+        rc = 0;
+    }
+    else
+    {
+        fprintf(stderr, "Unable to start MQTT Client for sending pulsecounter result");
+        delete PulseCounterScheduler::mqttClient;
+        PulseCounterScheduler::mqttClient = nullptr;
+        rc = 2;
+    }
+    delete PulseCounterScheduler::mqttClient;
+    PulseCounterScheduler::mqttClient = nullptr;
+    return rc;
 }
+
 static const char *checkRequiredParameter(const char *name, const char *value)
 {
     if (value != nullptr && strlen(value) > 0)
@@ -104,26 +146,30 @@ static const char *checkRequiredParameter(const char *name, const char *value)
     return (std::string("Required parameter ") + std::string(name) + std::string(" is not configured")).c_str();
 }
 
-const char *PulseCounterScheduler::isConfigured() const
+const char *PulseCounterScheduler::checkConfiguration(const Config &cfg) const
 {
-    const char *parameter = checkRequiredParameter("MQTT URL", config.getMqtt().getMqtturl());
+    const char *parameter = checkRequiredParameter("MQTT URL", cfg.getMqtt().getMqtturl());
     if (parameter != nullptr)
         return parameter;
-    switch (config.getMqtt().getAuthenticationMethod())
+    parameter = checkRequiredParameter("MQTT topic", cfg.getMqtt().getTopic());
+    if (parameter != nullptr)
+        return parameter;
+
+    switch (cfg.getMqtt().getAuthenticationMethod())
     {
     case userPassword:
-        parameter = checkRequiredParameter("MQTT Username", config.getMqtt().getUsername());
+        parameter = checkRequiredParameter("MQTT Username", cfg.getMqtt().getUsername());
         if (parameter != nullptr)
             return parameter;
-        return checkRequiredParameter("MQTT Password", config.getMqtt().getPassword());
+        return checkRequiredParameter("MQTT Password", cfg.getMqtt().getPassword());
     case SSL:
-        parameter = checkRequiredParameter("SSL root ca", config.getNetwork().getSslCa());
+        parameter = checkRequiredParameter("SSL root ca", cfg.getNetwork().getSslCa());
         if (parameter != nullptr)
             return parameter;
-        parameter = checkRequiredParameter("SSL host", config.getNetwork().getSslHost());
+        parameter = checkRequiredParameter("SSL host", cfg.getNetwork().getSslHost());
         if (parameter != nullptr)
             return parameter;
-        return checkRequiredParameter("SSL host key", config.getNetwork().getSslHostKey());
+        return checkRequiredParameter("SSL host key", cfg.getNetwork().getSslHostKey());
     default:
         return nullptr;
     }

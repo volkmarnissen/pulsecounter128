@@ -71,6 +71,8 @@
         "config.hpp": "c",
         "websrvplscount hpp": "cpp",
         "i2cdev.h": "c",
-        "condition_variable": "cpp"
+        "condition_variable": "cpp",
+        "chrono": "cpp",
+        "mutex": "cpp"
     }
 }
