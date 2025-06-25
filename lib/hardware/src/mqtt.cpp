@@ -20,9 +20,18 @@ void MqttClient::publish(const char *topic, const char *payload) {};
 #include "mqtt_client.h"
 #include "esp_event.h"
 #include <esp_log.h>
+#define NO_MQTT_EVENT_LOGS
 
 static const char *TAG = "mqtt";
-
+static void esp_event_logi(const char *format...)
+{
+    va_list args;
+    va_start(args, format);
+#ifndef NO_MQTT_EVENT_LOGS
+    esp_log_write(ESP_LOG_INFO, TAG, format, args);
+#endif
+    va_end(args);
+}
 static void log_error_if_nonzero(const char *message, int error_code)
 {
     if (error_code != 0)
@@ -106,31 +115,31 @@ void MqttClient::eventHandler(void *handler_args, esp_event_base_t base, int32_t
     switch ((esp_mqtt_event_id_t)event_id)
     {
     case MQTT_EVENT_CONNECTED:
-        ESP_LOGI(TAG, "MQTT_EVENT_CONNECTED \"%s\"", mqttClient->clientId.c_str());
+        esp_event_logi("MQTT_EVENT_CONNECTED \"%s\"", mqttClient->clientId.c_str());
         mqttClient->subscribeAndPublish();
         break;
     case MQTT_EVENT_DISCONNECTED:
-        ESP_LOGI(TAG, "MQTT_EVENT_DISCONNECTED \"%s\"", mqttClient->clientId.c_str());
+        esp_event_logi("MQTT_EVENT_DISCONNECTED \"%s\"", mqttClient->clientId.c_str());
         break;
 
     case MQTT_EVENT_SUBSCRIBED:
-        ESP_LOGI(TAG, "MQTT_EVENT_SUBSCRIBED, msg_id=%d", event->msg_id);
+        esp_event_logi("MQTT_EVENT_SUBSCRIBED, msg_id=%d", event->msg_id);
         // msg_id = esp_mqtt_client_publish(client, "/topic/qos0", "data", 0, 0, 0);
-        ESP_LOGI(TAG, "sent publish successful, msg_id=%d", msg_id);
+        esp_event_logi("sent publish successful, msg_id=%d", msg_id);
         break;
     case MQTT_EVENT_UNSUBSCRIBED:
-        ESP_LOGI(TAG, "MQTT_EVENT_UNSUBSCRIBED, msg_id=%d", event->msg_id);
+        esp_event_logi("MQTT_EVENT_UNSUBSCRIBED, msg_id=%d", event->msg_id);
         break;
     case MQTT_EVENT_PUBLISHED:
-        ESP_LOGI(TAG, "MQTT_EVENT_PUBLISHED, msg_id=%d", event->msg_id);
+        esp_event_logi("MQTT_EVENT_PUBLISHED, msg_id=%d", event->msg_id);
         mqttClient->onPublished(event->topic, event->data);
         break;
     case MQTT_EVENT_DATA:
-        ESP_LOGI(TAG, "MQTT_EVENT_DATA \"%s\"", mqttClient->clientId.c_str());
+        esp_event_logi("MQTT_EVENT_DATA \"%s\"", mqttClient->clientId.c_str());
         mqttClient->onMessage(event->topic, event->data);
         break;
     case MQTT_EVENT_ERROR:
-        ESP_LOGI(TAG, "MQTT_EVENT_ERROR \"%s\"", mqttClient->clientId.c_str());
+        esp_event_logi("MQTT_EVENT_ERROR \"%s\"", mqttClient->clientId.c_str());
         switch (event->error_handle->error_type)
         {
         case MQTT_ERROR_TYPE_TCP_TRANSPORT:
@@ -147,7 +156,7 @@ void MqttClient::eventHandler(void *handler_args, esp_event_base_t base, int32_t
         }
         break;
     default:
-        ESP_LOGI(TAG, "Other event id 0x%04X \"%s\"", (unsigned int)event_id, mqttClient->clientId.c_str());
+        esp_event_logi("Other event id 0x%04X \"%s\"", (unsigned int)event_id, mqttClient->clientId.c_str());
         break;
     }
 }

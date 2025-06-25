@@ -1,9 +1,14 @@
 
 #include "pulsecounter.hpp"
 #include <cstdint>
+#include <thread>
+#include <chrono>
 #include <string.h>
 #include <iostream>
 #include <cassert>
+#ifndef NATIVE
+#include <esp_log.h>
+#endif
 static const char *TAG = "pulsecounter";
 struct OutputData
 {
@@ -38,11 +43,31 @@ bool Pulsecounter::inputHasRisingEdge(PulseCounterType &pulseCounter)
 }
 void Pulsecounter::setConfig(const Config &cfg)
 {
+   Pulsecounter::init();
    for (auto counter : cfg.getCounters())
       Pulsecounter::setPulseCounter(counter.getOutputPort(), counter.getInputPort());
+   I2c *i2c = I2c::get();
+   while (i2c == nullptr)
+   {
+      std::this_thread::sleep_for(std::chrono::milliseconds(100));
+      i2c = I2c::get();
+   }
+   omask_t outputMask = i2c->readOutputPorts();
+   omask_t initialOutputMask = outputMask;
    for (auto output : cfg.getOutputs())
+   {
       Pulsecounter::setOutputConfiguration(output.getPort(), output.getConfiguration());
-   Pulsecounter::init();
+      if (output.getConfiguration().type == EMeterType || output.getConfiguration().type == WaterMeterType)
+         outputMask |= 1 << output.getPort();
+   }
+   bool rc = i2c->writeOutputs(outputMask);
+#ifndef NATIVE
+   ESP_LOGI(TAG, "Set Outputmask from 0x%02x to 0x%02x %s", (unsigned)initialOutputMask, (unsigned)outputMask, rc ? "Successfully" : "Error!");
+#endif
+
+   // Clear EMeter outputPorts
+   I2c::get()->writeOutputs(outputMask);
+
    if (readInputThread != NULL)
    {
       Pulsecounter::stopThread();
@@ -183,6 +208,11 @@ void Pulsecounter::init()
       pulseCounters[a].numInputPort = 0xFF;
       pulseCounters[a].counter = 0;
    }
+
+#ifndef NATIVE
+   omask_t currentMask = I2c::get()->readOutputPorts();
+   ESP_LOGI(TAG, "Initial State of output ports 0x%x", (unsigned)currentMask);
+#endif
 }
 void Pulsecounter::startThread()
 {
@@ -190,6 +220,7 @@ void Pulsecounter::startThread()
    auto cfg = esp_pthread_get_default_config();
    esp_pthread_set_cfg(&cfg);
 #endif
+
    assert(readInputThread == NULL);
    runReadInputThread = true;
    readInputThread = new std::thread(readInput);
