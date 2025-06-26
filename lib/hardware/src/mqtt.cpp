@@ -16,6 +16,8 @@ MqttClient::MqttClient(const MqttConfig &config, const NetworkConfig &network) {
 int MqttClient::start() { return 0; };
 int MqttClient::stop() { return 0; };
 void MqttClient::publish(const char *topic, const char *payload) {};
+MqttClient::~MqttClient() {};
+
 #else
 #include "mqtt_client.h"
 #include "esp_event.h"

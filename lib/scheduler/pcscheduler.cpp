@@ -28,10 +28,10 @@ void PulseCounterScheduler::execute()
     //  Just continue.
 }
 
-void PulseCounterScheduler::setConfig(const Config &_config)
+void PulseCounterScheduler::setConfig(Config &_config)
 {
     config = _config;
-    Scheduler::setConfig(config.getSchedule());
+    Scheduler::setConfig((ScheduleConfig &)config.getSchedule());
 }
 
 void PulseCounterScheduler::storePulseCounts(time_t date) const
@@ -121,7 +121,6 @@ int PulseCounterScheduler::publish(const char *topic, const char *payload)
     }
     else if (0 == PulseCounterScheduler::mqttClient->start())
     {
-        using namespace std::chrono_literals;
         PulseCounterScheduler::mqttClient->publish(topic, payload);
         std::this_thread::sleep_for(std::chrono::milliseconds(400));
 

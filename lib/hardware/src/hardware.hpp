@@ -1,7 +1,7 @@
 #pragma once
 #include <cstdint>
 #ifndef MOCK_I2C
-#include <pcf8574.h>
+#include <driver/i2c_master.h>
 #endif
 typedef unsigned char omask_t;
 typedef unsigned short imask_t;
@@ -15,17 +15,19 @@ class I2c
     i2c_port_t i2c_master_port;
     i2c_dev_t dev_handleReads[2];
     i2c_dev_t dev_handleWrites[2];
+    pcf8574_read(int addr, uint8_t *data);
+    pcf8574_write(int addr, uint8_t data);
     bool isInitialized;
-    bool initDevices(const int *devAddresses, i2c_dev_t *devHandles);
-    bool initBus();
     I2c();
     ~I2c();
 #endif
 
 public:
-    omask_t readOutputPorts();
+    omask_t readOutputPorts(int idx = 0);
     imask_t readInputPorts();
-    void writeOutputs(omask_t mask);
+    bool initBus();
+    bool writeInputPorts(imask_t inputMask);
+    bool writeOutputs(omask_t mask, int idx = 0);
     static I2c *get();
     static void deleteInstance();
 };
@@ -35,8 +37,8 @@ extern void loge(const char *tag, const char *message);
 #ifdef MOCK_I2C
 namespace MockI2c
 {
-    extern omask_t (*mock_readOutputPorts)();
+    extern omask_t (*mock_readOutputPorts)(int idx);
     extern imask_t (*mock_readInputPorts)();
-    extern void (*mock_writeOutputs)(omask_t mask);
+    extern void (*mock_writeOutputs)(omask_t mask, int idx);
 }
 #endif

@@ -21,7 +21,7 @@ public:
 
 public:
     PulseCounterScheduler(Config &_config);
-    void setConfig(const Config &config);
+    void setConfig(Config &config);
 
     const char *checkConfiguration(const Config &_config) const;
     void execute();

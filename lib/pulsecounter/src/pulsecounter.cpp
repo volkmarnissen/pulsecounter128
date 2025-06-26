@@ -10,14 +10,6 @@
 #include <esp_log.h>
 #endif
 static const char *TAG = "pulsecounter";
-struct OutputData
-{
-   uint16_t currentCount;
-   uint16_t maxCount;
-   imask_t previousInputMask;
-   imask_t currentInputMask;
-   omask_t outputMask;
-};
 
 // 20ms wait time before reading inputs again
 // Will be lowered in unit tests
@@ -56,10 +48,11 @@ void Pulsecounter::setConfig(const Config &cfg)
    omask_t initialOutputMask = outputMask;
    for (auto output : cfg.getOutputs())
    {
-      Pulsecounter::setOutputConfiguration(output.getPort(), output.getConfiguration());
+      Pulsecounter::setOutputConfiguration(output, cfg);
       if (output.getConfiguration().type == EMeterType || output.getConfiguration().type == WaterMeterType)
          outputMask |= 1 << output.getPort();
    }
+
    bool rc = i2c->writeOutputs(outputMask);
 #ifndef NATIVE
    ESP_LOGI(TAG, "Set Outputmask from 0x%02x to 0x%02x %s", (unsigned)initialOutputMask, (unsigned)outputMask, rc ? "Successfully" : "Error!");
@@ -93,7 +86,7 @@ bool Pulsecounter::readInputsRisingEdge()
       if (odata.currentCount == 0 && odata.maxCount > 0)
       {
          // Set bit for outPin 1-16
-         omask_t outputPinMask = currentMask | odata.outputMask;
+         omask_t outputPinMask = (currentMask & ~odata.pcMask) | odata.onMask;
          I2c::get()->writeOutputs(outputPinMask);
          odata.previousInputMask = odata.currentInputMask;
          odata.currentInputMask = I2c::get()->readInputPorts();
@@ -124,13 +117,43 @@ void Pulsecounter::readPorts(OutputConfigurationType type)
       }
 }
 
-void Pulsecounter::setOutputConfiguration(uint8_t port, OutputConfiguration config)
+void Pulsecounter::setOutputConfiguration(const OutputConfig &output, const Config &config)
 {
-   if (config.type == EMeterType)
-      outputData[port].maxCount = 1;
+   OutputData &odata = outputData[output.getPort()];
+   omask_t offMask = 0;
+   odata.onMask = odata.offMask = odata.pcMask = 0;
+   for (auto o : config.getOutputs())
+   {
+      switch (o.getConfiguration().type)
+      {
+      case EMeterType:
+         odata.onMask |= (o.getPort() == output.getPort() ? 0 : 1) << o.getPort();
+         odata.offMask |= (o.getPort() == output.getPort() ? 1 : 0) << o.getPort();
+         odata.pcMask |= 1 << o.getPort();
+         break;
+      case WaterMeterType:
+         odata.onMask |= (o.getPort() == output.getPort() ? 1 : 0) << o.getPort();
+         odata.offMask |= (o.getPort() == output.getPort() ? 0 : 1) << o.getPort();
+         odata.pcMask |= 1 << o.getPort();
+         break;
+      case None:
+         break;
+      }
+   }
+
+   if (output.getConfiguration().type == EMeterType)
+   {
+      odata.maxCount = 1;
+   }
    else
-      outputData[port].maxCount = 1234;
-   // Ceiling(Watermeter 2.5[m3/min?]* 60000[ms/min] / 1000[pulses/m3] / 30[ms] )
+   {
+      int maxDivider = 1;
+      for (auto c : config.getCounters())
+         if (c.getOutputPort() == output.getPort() && c.getDivider() > maxDivider)
+            maxDivider = c.getDivider();
+      // Ceiling(Watermeter 2.5[m3/h] * 1000[pulses/m3] / (3600*1000[ms/h]  / waitTimeInMillis[ms] / min(WaterMeter divider) )
+      odata.maxCount = (uint16_t)(2.5 * maxDivider / (3600 * 1000 / waitTimeInMillis));
+   };
 }
 void Pulsecounter::setPulseCounter(uint8_t outputPort, uint8_t inputPort)
 {
@@ -186,6 +209,14 @@ void readInput()
    }
    I2c::deleteInstance();
 }
+
+#ifdef NATIVE
+extern OutputData *Pulsecounter::getOutputData()
+{
+   return outputData;
+}
+#endif
+
 #ifndef MOCK_PTHREAD
 #include <esp_pthread.h>
 #endif
@@ -199,7 +230,6 @@ void Pulsecounter::init()
       outputData[a].currentCount = 0;
       outputData[a].previousInputMask = 0;
       outputData[a].currentInputMask = 0;
-      outputData[a].outputMask = 1 << a;
       pulseCounters[a * numOutputs].numOutPort = a;
    }
    for (int a = 0; a < sizeof(pulseCounters) / sizeof(pulseCounters[0]); a++)

@@ -15,8 +15,8 @@ protected:
     int port;
 
 public:
-    OutputConfiguration getConfiguration() { return config; };
-    int getPort() { return port; };
+    const OutputConfiguration getConfiguration() const { return config; };
+    int getPort() const { return port; };
 };
 
 class CounterConfig
