@@ -156,6 +156,8 @@ void WebserverPulsecounter::start(const char *serverCert, const char *caCert, co
         ESP_LOGE(TAG, "unable to register %s", indexUri.uri);
     if (0 != server.registerUriHandler(&postConfigUri))
         ESP_LOGE(TAG, "unable to register %s", postConfigUri.uri);
+    if (0 != server.registerUriHandler(&postUpdateUri))
+        ESP_LOGE(TAG, "unable to register %s", postUpdateUri.uri);
 };
 void WebserverPulsecounter::stop()
 {
