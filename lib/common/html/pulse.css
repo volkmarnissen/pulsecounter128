@@ -85,7 +85,7 @@ input{
     min-height: 20pt;
 }
 #progress-bar{
-    width: 10%;
+    width: 1%;
     min-height: 20pt;
     background-color: green;
     color: white;
