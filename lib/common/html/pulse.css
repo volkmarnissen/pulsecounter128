@@ -72,6 +72,25 @@ input{
     min-height: 20pt;
     font-size: large;  
 }
+#uploadButton{
+    min-height: 20pt;
+    width: 300pt;
+}
+#updateFile{
+    width: 200pt;
+    min-height: 20pt;
+}
+#progress-num{
+    width: 120px;
+    min-height: 20pt;
+}
+#progress-bar{
+    width: 10%;
+    min-height: 20pt;
+    background-color: green;
+}
+
+
 .tooltip {
   position: relative;
   display: inline-block;

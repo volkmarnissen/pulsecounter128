@@ -120,7 +120,6 @@ void Pulsecounter::readPorts(OutputConfigurationType type)
 void Pulsecounter::setOutputConfiguration(const OutputConfig &output, const Config &config)
 {
    OutputData &odata = outputData[output.getPort()];
-   omask_t offMask = 0;
    odata.onMask = odata.offMask = odata.pcMask = 0;
    for (auto o : config.getOutputs())
    {
@@ -136,7 +135,7 @@ void Pulsecounter::setOutputConfiguration(const OutputConfig &output, const Conf
          odata.offMask |= (o.getPort() == output.getPort() ? 0 : 1) << o.getPort();
          odata.pcMask |= 1 << o.getPort();
          break;
-      case None:
+      case NoType:
          break;
       }
    }

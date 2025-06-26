@@ -43,7 +43,7 @@ I2c *I2c::get()
 #include <string.h>
 #include <driver/gpio.h>
 
-#include "driver/i2c_master.h"
+#include <driver/i2c.h>
 #include "esp_log.h"
 
 static const int i2cAddressInputs1_8 = 0x22;

@@ -13,10 +13,8 @@ class I2c
     static I2c *theInstance;
 #ifndef MOCK_I2C
     i2c_port_t i2c_master_port;
-    i2c_dev_t dev_handleReads[2];
-    i2c_dev_t dev_handleWrites[2];
-    pcf8574_read(int addr, uint8_t *data);
-    pcf8574_write(int addr, uint8_t data);
+    esp_err_t pcf8574_read(int addr, uint8_t *data);
+    esp_err_t pcf8574_write(int addr, uint8_t data);
     bool isInitialized;
     I2c();
     ~I2c();

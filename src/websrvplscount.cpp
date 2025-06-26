@@ -17,12 +17,16 @@ static const int SCRATCH_BUFSIZE = 8192;
 extern const char _binary_index_html_start[] asm("_binary_index_html_start");
 extern const char _binary_pulse_css_start[] asm("_binary_pulse_css_start");
 extern const char _binary_pulse_js_start[] asm("_binary_pulse_js_start");
+extern const char _binary_ota_js_start[] asm("_binary_ota_js_start");
+extern esp_err_t postUpdateHandler(httpd_req_t *req);
 extern void reconfigure();
 
 static esp_err_t getHandler(httpd_req_t *r)
 {
     if (std::string(r->uri).ends_with("pulse.js"))
         httpd_resp_send(r, _binary_pulse_js_start, HTTPD_RESP_USE_STRLEN);
+    if (std::string(r->uri).ends_with("ota.js"))
+        httpd_resp_send(r, _binary_ota_js_start, HTTPD_RESP_USE_STRLEN);
     else if (std::string(r->uri).ends_with("pulse.css"))
         httpd_resp_send(r, _binary_pulse_css_start, HTTPD_RESP_USE_STRLEN);
     else if (std::string(r->uri).ends_with("api/config"))
@@ -125,6 +129,14 @@ static httpd_uri_t postConfigUri = {
     .method = HTTP_POST,
     .handler = postConfigHandler,
     .user_ctx = NULL};
+
+/* URI handler structure for POST /uri */
+static httpd_uri_t postUpdateUri = {
+    .uri = "/api/update",
+    .method = HTTP_POST,
+    .handler = postUpdateHandler,
+    .user_ctx = NULL};
+
 void WebserverPulsecounter::setConfig(const NetworkConfig &config)
 {
     server.stop();

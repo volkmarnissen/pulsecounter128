@@ -5,6 +5,7 @@
     <link rel="stylesheet" href="pulse.css"/>
    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css"/>
    <script src="pulse.js"></script>
+   <script src="ota.js"></script>
    <body>
         <form id="form">
             <div class="flexcolumn">
@@ -95,7 +96,24 @@
                                         <input type="string" name="second" placeholder="0-59, 0-59..."  pattern="(([0-5][0-9]|[0-9])(\s*,\s*))*([0-5][0-9]|[0-9])\s*$"title="Comma separated list of seconds or second ranges&#013;E.g. 0,15-30,45">     
                                     </div>
                                 </div>
-                            </div>                        </div>
+                            </div>
+                            <div >
+                                <div class="inputLabel">
+                                    Upload Firmware
+                                </div>
+                                <div class="inputBody">
+                                    <div>
+                                        <label for="File:">Firmware to upload</label>
+                                        <input type="file" id="updateFile" accept=".bin" >
+                                    </div>
+                                        <button id="uploadButton" type="button" disabled class="uploadButton">Upload Firmware</button>
+                                    <div>
+                                        <div id="progress-bar" class="hidden"></div>
+                                    </div>
+                                </div>
+                            </div>                        
+
+                        </div>
                     </div>
                 </div>
                 <div id="outputTemplate" class="category">
