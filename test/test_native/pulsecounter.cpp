@@ -59,7 +59,7 @@ imask_t mock_readInputPorts()
     // toggle first bit
     imask_t save = currentState & ~1;
     currentState = save | (currentState & 1) ^ 0x0001;
-    if (readInputCount == 3)
+    if (readInputCount == 10)
         Pulsecounter::stopThread();
     readInputCount++;
     return currentState;
@@ -88,6 +88,9 @@ void pulsecounter_simple()
     MockI2c::mock_writeOutputs = mock_writeOutputs;
     Pulsecounter::startThread();
     Pulsecounter::joinThread();
+    OutputData *outputdata = Pulsecounter::getOutputData();
+    TEST_ASSERT_EQUAL_INT32(6, Pulsecounter::getCounts(0, 0));
+    TEST_ASSERT_EQUAL_INT32(0, Pulsecounter::getCounts(4, 5));
 }
 
 void pulsecounter_readInputsRisingEdge()
