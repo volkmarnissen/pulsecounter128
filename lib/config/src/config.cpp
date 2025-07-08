@@ -3,6 +3,8 @@
 #ifndef NATIVE
 #include <nvs_flash.h>
 #include <nvs.h>
+#else
+#define BUILD_DATE "20.2.2022 02:02:02"
 #endif
 #include <stdexcept>
 #include "ArduinoJson.h"
@@ -180,6 +182,19 @@ const Config &Config::getConfig(const char *jsonContent)
     }
     return theConfiguration;
 };
+std::string Config::addBuildDate(const char *json)
+{
+    std::string rc = "{";
+#ifdef BUILD_DATE
+    rc += "\n\"builddate\": \"";
+#define STRINGIFY(s) STRINGIFY1(s)
+#define STRINGIFY1(s) #s
+    rc += STRINGIFY(BUILD_DATE);
+    rc += "\",";
+#endif
+    rc += (json + 1);
+    return rc;
+}
 
 #ifndef NATIVE
 void Config::setJson(const char *newJson)
@@ -237,7 +252,7 @@ const std::string Config::getJson()
                 {
                     fprintf(stderr, "Unable to read Configuration from NVS\n");
                 }
-                rc = configJson;
+                rc = Config::addBuildDate(configJson);
             }
             free(configJson);
         }
@@ -252,6 +267,6 @@ const std::string Config::getJson()
 };
 #else
 void Config::setJson(const char *newJson) {};
-const std::string Config::getJson() { return std::string(""); };
+const std::string Config::getJson() { return Config::addBuildDate("{ \"someKey\": \"SomeValue\"}"); };
 
 #endif

@@ -83,6 +83,8 @@ public:
 
 class Config
 {
+    static std::string addBuildDate(const char *json);
+
 protected:
     std::vector<CounterConfig> counters;
     std::vector<OutputConfig> outputs;

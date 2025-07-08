@@ -23,6 +23,11 @@ void config_lohmann()
     TEST_ASSERT_EQUAL_INT32(0, config.getSchedule().getHour().size());
 }
 
+void config_addBuildDate()
+{
+    std::string rc = Config::getJson();
+    TEST_ASSERT_EQUAL_STRING("{\n\"builddate\": \"20.2.2022 02:02:02\", \"someKey\": \"SomeValue\"}", rc.c_str());
+}
 void config_jsonCheck()
 {
 
@@ -41,6 +46,7 @@ void config_jsonCheck()
 void config_tests()
 {
     // RUN_TEST(config_jsonCheck);
+    RUN_TEST(config_addBuildDate);
     RUN_TEST(config_lohmann);
     RUN_TEST(config_simple);
 }

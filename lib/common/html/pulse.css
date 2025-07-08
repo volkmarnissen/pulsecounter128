@@ -124,3 +124,7 @@ input{
 .tooltip:hover .tooltiptext {
   visibility: visible;
 }
+
+footer p {
+    font-size: x-small;
+}

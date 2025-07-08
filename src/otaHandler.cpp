@@ -97,9 +97,9 @@ esp_err_t postUpdateHandler(httpd_req_t *req)
                 const esp_partition_t *boot_partition = esp_ota_get_boot_partition();
 
                 ESP_LOGI(FNAME, "Next boot partition subtype %d at offset 0x%x", boot_partition->subtype, (unsigned)boot_partition->address);
-                ESP_LOGI(FNAME, "Rebooting in 3 seconds...");
-
+                ESP_LOGI(FNAME, "Rebooting");
                 // Webserver.setOtaStatus(otaStatus::DONE);
+                esp_restart();
             }
             else
             {
