@@ -1,3 +1,4 @@
+#ifndef NATIVE
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "esp_system.h"
@@ -14,3 +15,4 @@
 void simple_ota_example_task(void *pvParameter)
 {
 }
+#endif

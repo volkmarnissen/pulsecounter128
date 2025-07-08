@@ -1,11 +1,12 @@
-<html>
+<!DOCTYPE html>
+<html lang="en">
      <head>
-        <topic>Configure Pulse Counter</topic>
-    </head>
-    <link rel="stylesheet" href="pulse.css"/>
-   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css"/>
+        <title>Configure Pulse Counter</title>    
+   <link rel="stylesheet" href="pulse.css">
+   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
    <script src="pulse.js"></script>
    <script src="ota.js"></script>
+    </head>
    <body>
         <form id="form">
             <div class="flexcolumn">
@@ -27,24 +28,24 @@
                                 <div class="inputBody">
                                     <div>
                                         <label for="hostname">Host name: </label>
-                                        <input type="string" name="hostname">                                         
+                                        <input id="hostname" type="text" name="hostname">                                         
                                     </div>
                                     <div class="tooltip">
                                         <label for="ntpserver">NTP-Server</label>
-                                        <input type="string" name="ntpserver">   
+                                        <input id="ntpserver"  type="text" name="ntpserver">   
                                           <span class="tooltiptext">If it's not already passed via DHCP</span>
                                     </div>
                                     <div>
                                         <label for="sslhost">SSL Cert. Host: </label>
-                                        <input type="string" name="sslhost">                                         
+                                        <input id="sslhost" type="text" name="sslhost">                                         
                                     </div>
                                     <div>
                                         <label for="sslhostkey">SSL Cert. Host key: </label>
-                                        <input type="string" name="sslhostkey">                                         
+                                        <input id="sslhostkey" type="text" name="sslhostkey">                                         
                                     </div>
                                     <div>
                                         <label for="sslca">SSL Cert. CA: </label>
-                                        <input type="string" name="sslca">                                         
+                                        <input id="sslca" type="text" name="sslca">                                         
                                     </div>                                    
                                 </div>
                             </div>
@@ -54,28 +55,28 @@
                                 </div>
                                 <div class="inputBody">
                                     <div>
-                                        <label for="MQTT URL">MQTT url: </label>
-                                        <input type="string" name="mqtturl" placeholder="mqtts://yourhost" class="w200" required>    
+                                        <label for="mqtturl">MQTT url: </label>
+                                        <input id= "mqtturl" type="text" name="mqtturl" placeholder="mqtts://yourhost" class="w200" required>    
                                     </div>
                                     <div>
                                         <label for="username">Username: </label>
-                                        <input type="string" name="username" class="w200">    
+                                        <input id="username" type="text" name="username" class="w200">    
                                     </div>                 
                                     <div>
                                         <label for="password">Password: </label>
-                                        <input type="password" name="password"  class="w200" autocomplete="on">    
+                                        <input id="password" type="password" name="password"  class="w200" autocomplete="on">    
                                     </div> 
                                     <div>
                                         <label for="authenticationMethod">Auth. Method: </label>
-                                        <select class="w200" name="authenticationMethod" >
+                                        <select id="authenticationMethod" class="w200" name="authenticationMethod" >
                                             <option value=0>SSL </option>
                                             <option value=1>Username/Password</option>
                                             <option value=2>No authentication</option>
                                         </select>
                                     </div>
                                     <div>
-                                        <label for="MQTT topic">MQTT topic: </label>
-                                        <input type="string" name="topic" placeholder="plscount" class="w200">    
+                                        <label for="topic">MQTT topic: </label>
+                                        <input id="topic" type="text" name="topic" placeholder="plscount" class="w200">    
                                     </div>
                 
                                 </div>
@@ -86,14 +87,14 @@
                                 </div>
                                 <div class="inputBody">
                                     <div>
-                                        <label for="hour:">hour: </label>
-                                        <input type="string" name="hour" placeholder="0-23, 0-23" title="Comma separated list of hours or or hour ranges&#013;E.g. 0,3-22,23">  
+                                        <label for="hour">hour: </label>
+                                        <input id="hour" type="text" name="hour" placeholder="0-23, 0-23" title="Comma separated list of hours or or hour ranges&#10;E.g. 0,3-22,23">  
                                     </div><div>
-                                        <label for="minute:">minute: </label>
-                                        <input type="string" name="minute" placeholder="0-59, 0-59..." pattern="(([0-5][0-9]|[0-9])(\s*,\s*))*([0-5][0-9]|[0-9])\s*$" title="Comma separated list of minutes or minute ranges&#013;E.g. 0,15-30,45">  
+                                        <label for="minute">minute: </label>
+                                        <input id="minute" type="text" name="minute" placeholder="0-59, 0-59..." pattern="(([0-5][0-9]|[0-9])(\s*,\s*))*([0-5][0-9]|[0-9])\s*$" title="Comma separated list of minutes or minute ranges&#10;E.g. 0,15-30,45">  
                                     </div><div>
-                                        <label for="second:">second: </label>
-                                        <input type="string" name="second" placeholder="0-59, 0-59..."  pattern="(([0-5][0-9]|[0-9])(\s*,\s*))*([0-5][0-9]|[0-9])\s*$"title="Comma separated list of seconds or second ranges&#013;E.g. 0,15-30,45">     
+                                        <label for="second">second: </label>
+                                        <input id="second" type="text" name="second" placeholder="0-59, 0-59..."  pattern="(([0-5][0-9]|[0-9])(\s*,\s*))*([0-5][0-9]|[0-9])\s*$" title="Comma separated list of seconds or second ranges&#10;E.g. 0,15-30,45">     
                                     </div>
                                 </div>
                             </div>
@@ -103,7 +104,7 @@
                                 </div>
                                 <div class="inputBody">
                                     <div>
-                                        <label for="File:">Firmware to upload</label>
+                                        <label for="updateFile">Firmware to upload</label>
                                         <input type="file" id="updateFile" accept=".bin" >
                                     </div>
                                         <button id="uploadButton" type="button" disabled class="uploadButton">Upload Firmware</button>
@@ -112,15 +113,45 @@
                                     </div>
                                 </div>
                             </div>                        
-
                         </div>
                     </div>
                 </div>
+                <div class="category">
+                    <div class="categoryHeader">
+                        <span>No Output</span>
+                    </div>
+                    <div id="nooutBody" class="categoryBody" >
+                       <div class="flexrow">
+
+                       </div>
+                       
+                    </div>
+
+                </div>
+            </div>
+            <button type="submit" class="submitButton" >Save Changes</button>
+        </form>
+                <div id="inputTemplate" class="input">
+                    <div class="inputLabel">
+                        Input Pin: 2
+                    </div>
+                    <div class="inputBody">
+                        <div>
+                            <label for="divider">Divider</label>
+                            <input id="divider" type="number" name="divider" placeholder="1000">    
+                        </div>
+                        <div>
+                            <label for="mqttname">MQTT Name</label>
+                            <input id="mqttname" type="text" name="mqttname">                                       
+                        </div>
+                    </div>                
+                </div>
+
                 <div id="outputTemplate" class="category">
                     <div class="categoryHeader">
                         <span>Output Pin 1</span>
                         <label for="type">Type </label>
-                        <select name="type_1"  onchange="categoryHeaderUpdateActive(this.name)">
+                        <select id="type" name="type_1"  onchange="categoryHeaderUpdateActive(this.name)">
                            <option value= -1>None</option>
                            <option value=0>Energy Meter</option>
                            <option value=1>Water Meter</option>
@@ -133,42 +164,10 @@
                     </div>
                     <div class="categoryBody hidden" >
                        <div class="flexrow">
-                            <div id="inputTemplate" class="input">
-                                <div class="inputLabel">
-                                    Input Pin: 2
-                                </div>
-                                <div class="inputBody">
-                                    <div>
-                                          <label for="divider_1_2">Divider</label>
-                                    <input type="number" name="divider_1_2" placeholder="1000">    
-                                    </div>
-                                    <div>
-                                        <label for="mqttname_1_2">MQTT Name</label>
-                                        <input type="string" name="mqttname_1_2">                                       
-                                    </div>
 
-                                </div>
-                
-                            </div>
-                            <div  class="input">
-                                <div class="inputLabel">
-                                Input Pin: 3
-                                </div>
-                                <div class="inputBody">
-                                    <div>
-                                        <label for="divider_1_3">Divider</label>
-                                        <input type="string" name="divider_1_3"/>
-                                    </div>
-                                    <div>
-                                        <label for="mqttname_1_3">MQTT Name</label>
-                                        <input type="string" name="mqttname_1_3">                                       
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
+                       </div>
+                    </div>
                 </div>     
-            </div>
-            <button type="submit" class="submitButton" >Save Changes</button>
-        </form>
+
     </body>
 </html>

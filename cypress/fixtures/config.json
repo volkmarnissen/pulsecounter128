@@ -1,6 +1,12 @@
 {
   "counters": [
     {
+      "mqttname": "testNoOutput",
+      "divider": 888,
+      "inputPort": 6,
+      "outputPort": -1
+    },
+    {
       "mqttname": "test1",
       "divider": 888,
       "inputPort": 0,

@@ -137,9 +137,13 @@ static httpd_uri_t postUpdateUri = {
     .handler = postUpdateHandler,
     .user_ctx = NULL};
 
-void WebserverPulsecounter::setConfig(const NetworkConfig &config)
+void WebserverPulsecounter::setConfig(const NetworkConfig &config, bool reset)
 {
     server.stop();
+    if (reset)
+    {
+        // TODO start with http (not SSL)
+    }
     // TODO: Add ssl parameter later
     ESP_LOGI(TAG, "Stopped Web Server");
     WebserverPulsecounter::start();

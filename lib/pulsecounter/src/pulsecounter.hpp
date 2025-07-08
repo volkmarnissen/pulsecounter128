@@ -19,6 +19,11 @@ struct OutputData
   omask_t onMask;
   omask_t pcMask;
 };
+struct NoOutputData
+{
+  imask_t previousInputMask;
+  imask_t currentInputMask;
+};
 
 const uint8_t maxPulseCounters = 128;
 const uint8_t noInputPort = 0xFF;
@@ -39,5 +44,6 @@ namespace Pulsecounter
   extern void reset();
 #ifdef NATIVE
   extern OutputData *getOutputData();
+  extern NoOutputData *getNoOutputData();
 #endif
 }

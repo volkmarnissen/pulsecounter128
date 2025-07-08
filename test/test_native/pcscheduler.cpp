@@ -48,19 +48,19 @@ void pcscheduler_storeCounts()
     pc.storePulseCounts(t);
     int pcc = getCounterStorageCount();
     auto pcs = getCountersStorage();
-    TEST_ASSERT_EQUAL_INT32(3200, pcs[0].counts[0]);
-    TEST_ASSERT_EQUAL_INT32(0, pcs[0].outputPort);
-    TEST_ASSERT_EQUAL_INT32(6400, pcs[1].counts[5]);
-    TEST_ASSERT_EQUAL_INT32(4, pcs[1].outputPort);
+    TEST_ASSERT_EQUAL_INT32(3200, pcs[1].counts[0]);
+    TEST_ASSERT_EQUAL_INT32(0, pcs[1].outputPort);
+    TEST_ASSERT_EQUAL_INT32(6400, pcs[2].counts[5]);
+    TEST_ASSERT_EQUAL_INT32(4, pcs[2].outputPort);
     setPulseCount(4, 5, 7200);
     pc.storePulseCounts(t); // same time
-    TEST_ASSERT_EQUAL_INT32(7200, pcs[1].counts[5]);
+    TEST_ASSERT_EQUAL_INT32(7200, pcs[2].counts[5]);
     tm.tm_sec = 27;
     t = mktime(&tm);
     setPulseCount(4, 5, 8000);
     pc.storePulseCounts(t); // different time, new entries for 0,0 and 4,5
-    TEST_ASSERT_EQUAL_INT32(7200, pcs[1].counts[5]);
-    TEST_ASSERT_EQUAL_INT32(8000, pcs[3].counts[5]);
+    TEST_ASSERT_EQUAL_INT32(7200, pcs[2].counts[5]);
+    TEST_ASSERT_EQUAL_INT32(8000, pcs[6].counts[5]);
     std::string pyl = pc.generatePayload();
     std::string expected = "[{\"name\":\"test1\"\n\
 \"date\":1566508946\n\

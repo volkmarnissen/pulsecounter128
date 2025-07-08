@@ -18,10 +18,13 @@ static u_int16_t waitTimeInMillis = 20;
 // ULP data =============
 static bool inputsHaveRisingEdges;
 static OutputData outputData[8];
+static NoOutputData noOutputData;
 static bool resetRequest = false;
 
 // local static data =====================
 static PulseCounterType pulseCounters[maxPulseCounters];
+static int pulseCounterCount;
+
 static std::thread *readInputThread = NULL;
 static bool runReadInputThread = false;
 
@@ -29,10 +32,17 @@ bool Pulsecounter::inputHasRisingEdge(PulseCounterType &pulseCounter)
 {
    if (pulseCounter.numInputPort == noInputPort)
       return false;
-   imask_t pMask = outputData[pulseCounter.numOutPort].previousInputMask & (1 << pulseCounter.numInputPort);
-   imask_t cMask = outputData[pulseCounter.numOutPort].currentInputMask & (1 << pulseCounter.numInputPort);
+   imask_t pMask = noOutputData.previousInputMask & (1 << pulseCounter.numInputPort);
+   imask_t cMask = noOutputData.currentInputMask & (1 << pulseCounter.numInputPort);
+
+   if (pulseCounter.numOutPort != 0xFF)
+   {
+      pMask = outputData[pulseCounter.numOutPort].previousInputMask & (1 << pulseCounter.numInputPort);
+      cMask = outputData[pulseCounter.numOutPort].currentInputMask & (1 << pulseCounter.numInputPort);
+   }
    return (cMask & (~pMask)) > 0;
 }
+
 void Pulsecounter::setConfig(const Config &cfg)
 {
    Pulsecounter::init();
@@ -68,8 +78,7 @@ void Pulsecounter::setConfig(const Config &cfg)
       Pulsecounter::startThread();
    }
 }
-
-bool Pulsecounter::readInputsRisingEdge()
+bool readInputsRisingEdgeOutputs()
 {
    if (resetRequest)
    {
@@ -78,12 +87,22 @@ bool Pulsecounter::readInputsRisingEdge()
       resetRequest = false;
    }
    inputsHaveRisingEdges = false;
-   omask_t currentMask = I2c::get()->readOutputPorts();
+   bool atLeastOneOutput = false;
+   for (int pc = 0; pc < pulseCounterCount && !atLeastOneOutput; pc++)
+      if (pulseCounters[pc].numOutPort != 0xFF)
+         atLeastOneOutput = true;
+   omask_t currentMask = 0;
+   if (atLeastOneOutput)
+      currentMask = I2c::get()->readOutputPorts();
 
    for (int a = 0; a < sizeof(outputData) / sizeof(outputData[0]); a++)
    {
       OutputData &odata = outputData[a];
-      if (odata.currentCount == 0 && odata.maxCount > 0)
+      bool hasCounter = false;
+      for (int pc = 0; pc < pulseCounterCount && !hasCounter; pc++)
+         if (pulseCounters[pc].numOutPort == a)
+            hasCounter = true;
+      if (hasCounter && odata.currentCount == 0 && odata.maxCount > 0)
       {
          // Set bit for outPin 1-16
          omask_t outputPinMask = (currentMask & ~odata.pcMask) | odata.onMask;
@@ -93,11 +112,30 @@ bool Pulsecounter::readInputsRisingEdge()
 
          imask_t inputMask = odata.currentInputMask & (~odata.previousInputMask);
          if (inputMask > 0)
-            inputsHaveRisingEdges = true;
+            inputsHaveRisingEdges = inputsHaveRisingEdges | true;
       }
    }
-   I2c::get()->writeOutputs(currentMask);
+   if (atLeastOneOutput)
+      I2c::get()->writeOutputs(currentMask);
 
+   return inputsHaveRisingEdges;
+}
+bool readInputsRisingEdgeNoOutputs()
+{
+   noOutputData.previousInputMask = noOutputData.currentInputMask;
+   noOutputData.currentInputMask = I2c::get()->readInputPorts();
+   imask_t inputMask = noOutputData.currentInputMask & (~noOutputData.previousInputMask);
+   if (inputMask > 0)
+      inputsHaveRisingEdges = inputsHaveRisingEdges | true;
+   return inputsHaveRisingEdges;
+}
+
+bool Pulsecounter::readInputsRisingEdge()
+{
+   bool hasOutputPorts = false;
+   inputsHaveRisingEdges = false;
+   readInputsRisingEdgeOutputs();
+   readInputsRisingEdgeNoOutputs();
    return inputsHaveRisingEdges;
 }
 
@@ -157,10 +195,20 @@ void Pulsecounter::setOutputConfiguration(const OutputConfig &output, const Conf
 void Pulsecounter::setPulseCounter(uint8_t outputPort, uint8_t inputPort)
 {
    int numOutputs = sizeof(outputData) / sizeof(outputData[0]);
-   pulseCounters[outputPort * numOutputs + inputPort].numInputPort = inputPort;
-   pulseCounters[outputPort * numOutputs + inputPort].numOutPort = outputPort;
-   pulseCounters[outputPort * numOutputs + inputPort].counter = 0;
+   int found = -1;
+   for (int a = 0; a < pulseCounterCount && found >= 0; a++)
+      if (pulseCounters[a].numInputPort == inputPort && pulseCounters[a].numOutPort == outputPort)
+         found = a;
+   if (found < 0 && pulseCounterCount < sizeof(pulseCounters) / sizeof(pulseCounters[0]))
+   {
+      pulseCounters[pulseCounterCount].numInputPort = inputPort;
+      pulseCounters[pulseCounterCount].numOutPort = outputPort;
+      found = pulseCounterCount++;
+   }
+   if (found >= 0)
+      pulseCounters[found].counter = 0;
 }
+
 void Pulsecounter::countPulses()
 {
    for (int a = 0; a < sizeof(pulseCounters) / sizeof(pulseCounters[0]); a++)
@@ -177,6 +225,7 @@ void Pulsecounter::reset()
 
 uint32_t Pulsecounter::getCounts(uint8_t outputPort, uint8_t inputPort)
 {
+
    for (int a = 0; a < sizeof(pulseCounters) / sizeof(pulseCounters[0]); a++)
       if (pulseCounters[a].numInputPort == inputPort && pulseCounters[a].numOutPort == outputPort)
          return pulseCounters[a].counter;
@@ -214,6 +263,10 @@ extern OutputData *Pulsecounter::getOutputData()
 {
    return outputData;
 }
+extern NoOutputData *Pulsecounter::getNoOutputData()
+{
+   return &noOutputData;
+}
 #endif
 
 #ifndef MOCK_PTHREAD
@@ -229,8 +282,10 @@ void Pulsecounter::init()
       outputData[a].currentCount = 0;
       outputData[a].previousInputMask = 0;
       outputData[a].currentInputMask = 0;
-      pulseCounters[a * numOutputs].numOutPort = a;
    }
+   noOutputData.previousInputMask = 0;
+   noOutputData.currentInputMask = 0;
+   pulseCounterCount = 0;
    for (int a = 0; a < sizeof(pulseCounters) / sizeof(pulseCounters[0]); a++)
    {
       pulseCounters[a].numOutPort = a;

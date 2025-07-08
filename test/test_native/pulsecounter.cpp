@@ -53,6 +53,7 @@ imask_t mock_readInputPorts2()
         return currentState4; // always 5th bit set
     }
 };
+
 imask_t mock_readInputPorts()
 {
     static imask_t currentState = 0;
@@ -73,6 +74,10 @@ void mock_writeOutputs(omask_t o, int idx)
 {
     outputMask = o;
 };
+void mock_writeOutputsShouldNotBeCalled(omask_t o, int idx)
+{
+    TEST_FAIL_MESSAGE("writeOutput should not be called");
+};
 
 void pulsecounter_simple()
 {
@@ -83,14 +88,35 @@ void pulsecounter_simple()
     Pulsecounter::setPulseCounter(0, 0);
     Pulsecounter::setPulseCounter(4, 5);
     // MockI2C in hardware.hpp
+    readInputCount = 0;
+
     MockI2c::mock_readInputPorts = mock_readInputPorts;
     MockI2c::mock_readOutputPorts = mock_readOutputPorts;
     MockI2c::mock_writeOutputs = mock_writeOutputs;
     Pulsecounter::startThread();
     Pulsecounter::joinThread();
     OutputData *outputdata = Pulsecounter::getOutputData();
-    TEST_ASSERT_EQUAL_INT32(6, Pulsecounter::getCounts(0, 0));
+    TEST_ASSERT_EQUAL_INT32(4, Pulsecounter::getCounts(0, 0));
     TEST_ASSERT_EQUAL_INT32(0, Pulsecounter::getCounts(4, 5));
+}
+
+void pulsecounter_inputOnly()
+{
+    Pulsecounter::init();
+    //  TEST_ASSERT_TRUE( inputHasChanged( 0,0));
+    Config config = Config::getConfig(readFile("cypress/fixtures/config.json").c_str());
+    readInputCount = 0;
+    Pulsecounter::setPulseCounter(-1, 0);
+    Pulsecounter::setPulseCounter(-1, 5);
+    // MockI2C in hardware.hpp
+    MockI2c::mock_readInputPorts = mock_readInputPorts;
+    MockI2c::mock_readOutputPorts = mock_readOutputPorts;
+    MockI2c::mock_writeOutputs = mock_writeOutputsShouldNotBeCalled;
+    Pulsecounter::startThread();
+    Pulsecounter::joinThread();
+    OutputData *outputdata = Pulsecounter::getOutputData();
+    TEST_ASSERT_EQUAL_INT32(5, Pulsecounter::getCounts(-1, 0));
+    TEST_ASSERT_EQUAL_INT32(0, Pulsecounter::getCounts(-1, 5));
 }
 
 void pulsecounter_readInputsRisingEdge()
@@ -165,7 +191,8 @@ void pulsecounter_setOutputConfiguration()
     TestCounter c0(0, 0, 1000);
     TestCounter c1(1, 0, 500);
     TestCounter c2(2, 0, 1500);
-    TestCounter *ca[] = {&c0, &c1, &c2};
+    TestCounter c3(4, -1, 300);
+    TestCounter *ca[] = {&c0, &c1, &c2, &c3};
     TestConfig cfg(oa, sizeof(oa) / sizeof(oa[0]), ca, sizeof(ca) / sizeof(ca[0]));
     Pulsecounter::setOutputConfiguration(o0, cfg);
     OutputData *outputdata = Pulsecounter::getOutputData();
@@ -180,5 +207,6 @@ void pulsecounter_tests()
 {
     RUN_TEST(pulsecounter_setOutputConfiguration);
     RUN_TEST(pulsecounter_simple);
+    RUN_TEST(pulsecounter_inputOnly);
     RUN_TEST(pulsecounter_readInputsRisingEdge);
 }
