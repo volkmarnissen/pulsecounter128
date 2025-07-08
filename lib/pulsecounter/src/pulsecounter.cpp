@@ -132,7 +132,6 @@ bool readInputsRisingEdgeNoOutputs()
 
 bool Pulsecounter::readInputsRisingEdge()
 {
-   bool hasOutputPorts = false;
    inputsHaveRisingEdges = false;
    readInputsRisingEdgeOutputs();
    readInputsRisingEdgeNoOutputs();
@@ -194,7 +193,6 @@ void Pulsecounter::setOutputConfiguration(const OutputConfig &output, const Conf
 }
 void Pulsecounter::setPulseCounter(uint8_t outputPort, uint8_t inputPort)
 {
-   int numOutputs = sizeof(outputData) / sizeof(outputData[0]);
    int found = -1;
    for (int a = 0; a < pulseCounterCount && found >= 0; a++)
       if (pulseCounters[a].numInputPort == inputPort && pulseCounters[a].numOutPort == outputPort)

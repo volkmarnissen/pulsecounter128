@@ -24,17 +24,31 @@ extern void reconfigure();
 static esp_err_t getHandler(httpd_req_t *r)
 {
     if (std::string(r->uri).ends_with("pulse.js"))
+    {
+        httpd_resp_set_type(r, "text/css");
         httpd_resp_send(r, _binary_pulse_js_start, HTTPD_RESP_USE_STRLEN);
+    }
+
     if (std::string(r->uri).ends_with("ota.js"))
+    {
+        httpd_resp_set_type(r, "text/javascript");
         httpd_resp_send(r, _binary_ota_js_start, HTTPD_RESP_USE_STRLEN);
+    }
     else if (std::string(r->uri).ends_with("pulse.css"))
+    {
+        httpd_resp_set_type(r, "text/css");
         httpd_resp_send(r, _binary_pulse_css_start, HTTPD_RESP_USE_STRLEN);
+    }
     else if (std::string(r->uri).ends_with("api/config"))
     {
+        httpd_resp_set_type(r, "application/json");
         httpd_resp_send(r, Config::getJson().c_str(), HTTPD_RESP_USE_STRLEN);
     }
     else
+    {
+        httpd_resp_set_type(r, "text/html");
         httpd_resp_send(r, _binary_index_html_start, HTTPD_RESP_USE_STRLEN);
+    }
     return ESP_OK;
 };
 
@@ -137,10 +151,10 @@ static httpd_uri_t postUpdateUri = {
     .handler = postUpdateHandler,
     .user_ctx = NULL};
 
-void WebserverPulsecounter::setConfig(const NetworkConfig &config, bool reset)
+void WebserverPulsecounter::setConfig(const NetworkConfig &config, bool useHttp)
 {
     server.stop();
-    if (reset)
+    if (useHttp)
     {
         // TODO start with http (not SSL)
     }

@@ -23,6 +23,11 @@ void reconfigure()
         pcscheduler.setConfig(cfg);
     webserver.setConfig(cfg.getNetwork());
 }
+void reconfigureHttp()
+{
+    cfg = Config::getConfig(Config::getJson().c_str());
+    webserver.setConfig(cfg.getNetwork(), true);
+}
 
 void configureResetButton()
 {
@@ -47,6 +52,7 @@ extern "C" void app_main()
 
     Pulsecounter::setConfig(cfg);
     Pulsecounter::startThread();
+    configureResetButton();
     eth.setHostname(cfg.getNetwork().getHostname());
     eth.setNtpServer(cfg.getNetwork().getNtpserver());
     eth.init();
@@ -70,9 +76,8 @@ extern "C" void app_main()
         std::this_thread::sleep_for(std::chrono::milliseconds(1000));
         if (gpio_get_level(resetButtonPin) == 0) // Button was pressed
         {
-            reconfigure();
+            reconfigureHttp();
         }
         // If program button is pressed for one second, unconfigure https
-        gpio_get_level()
     }
 }

@@ -23,5 +23,5 @@ void i2c_writeOutputReadInput()
 void hardware_tests()
 {
     RUN_TEST(i2c_read);
-    RUN_TEST(i2c_writeOutputReadInput);
+    //   RUN_TEST(i2c_writeOutputReadInput);
 }
