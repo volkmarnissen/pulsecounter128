@@ -53,6 +53,8 @@ extern "C" void app_main()
     Pulsecounter::setConfig(cfg);
     Pulsecounter::startThread();
     configureResetButton();
+    esp_log_level_set("mqtt", ESP_LOG_DEBUG);
+    esp_log_level_set("wbsrvplscount", ESP_LOG_DEBUG);
     eth.setHostname(cfg.getNetwork().getHostname());
     eth.setNtpServer(cfg.getNetwork().getNtpserver());
     eth.init();

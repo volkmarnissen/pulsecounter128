@@ -6,9 +6,11 @@ class Webserver
 {
     httpd_handle_t handle = NULL;
     bool isSsl = false;
+    httpd_uri_t *uriHandlers;
+    int uriHandlerCount;
 
 public:
+    Webserver(httpd_uri_t *_uriHandlers, int _uriHandlerCount) : uriHandlers(_uriHandlers), uriHandlerCount(_uriHandlerCount) {};
     void start(const char *serverCert = NULL, const char *caCert = NULL, const unsigned char *privateKey = NULL);
     void stop(void);
-    esp_err_t registerUriHandler(httpd_uri_t *uriHandler);
 };

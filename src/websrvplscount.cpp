@@ -59,14 +59,11 @@ class ValidationMqttClient : public MqttClient
 
 public:
     bool reconfigureRequest;
-    virtual ~ValidationMqttClient()
-    {
-        if (content)
-            free((void *)content);
+    virtual ~ValidationMqttClient() {
     };
-    ValidationMqttClient(httpd_req_t *_req, const char *_content, const MqttConfig &config, const NetworkConfig &network) : MqttClient(config, network), req(_req), content(_content), reconfigureRequest(false)
+    ValidationMqttClient(httpd_req_t *_req, const char *_content, const NetworkConfig &network) : MqttClient(), req(_req), content(_content), reconfigureRequest(false)
     {
-        clientId = "validation";
+        setClientId(network.getHostname(), "validation");
     }
     virtual void subscribeAndPublish()
     {
@@ -115,41 +112,48 @@ static esp_err_t postConfigHandler(httpd_req_t *req)
     };
     content[receivedTotal] = 0;
     ESP_LOGI(TAG, "Reception successful  %s", content);
-    ESP_LOGI(TAG, "Reception successful");
     const Config &newCfg = Config::getConfig(content);
-    ESP_LOGI(TAG, "getConfig");
     // create an mqtt client and initialize it the callbacks will send a response
     // and store the new content
-    ValidationMqttClient client(req, content, newCfg.getMqtt(), newCfg.getNetwork());
-    if (0 == client.start())
-    {
-        std::this_thread::sleep_for(std::chrono::milliseconds(1000));
-        if (client.reconfigureRequest && req->user_ctx != nullptr)
-            ((WebserverPulsecounter *)req->user_ctx)->reconfigureRequest = true;
-    }
+    if (req->user_ctx)
+        ((WebserverPulsecounter *)req->user_ctx)->startValidationMqttClient(req, content, newCfg.getMqtt(), newCfg.getNetwork());
+    else
+        ESP_LOGE(TAG, "No User Context for config handler");
     return ESP_OK;
 };
 
+WebserverPulsecounter::~WebserverPulsecounter()
+{
+    if (validationMqttClient)
+        delete validationMqttClient;
+};
+void WebserverPulsecounter::startValidationMqttClient(httpd_req_t *req, const char *content, const MqttConfig &config, const NetworkConfig &network)
+{
+    if (validationMqttClient != nullptr)
+        delete validationMqttClient;
+    validationMqttClient = new ValidationMqttClient(req, content, network);
+    if (0 == validationMqttClient->start(config, network))
+    {
+        std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+        if (validationMqttClient->reconfigureRequest)
+            reconfigureRequest = true;
+    }
+}
 /* URI handler structure for GET /uri */
-static httpd_uri_t indexUri = {
-    .uri = "*",
-    .method = HTTP_GET,
-    .handler = getHandler,
-    .user_ctx = NULL};
-
-/* URI handler structure for POST /uri */
-static httpd_uri_t postConfigUri = {
-    .uri = "/api/config",
-    .method = HTTP_POST,
-    .handler = postConfigHandler,
-    .user_ctx = NULL};
-
-/* URI handler structure for POST /uri */
-static httpd_uri_t postUpdateUri = {
-    .uri = "/api/update",
-    .method = HTTP_POST,
-    .handler = postUpdateHandler,
-    .user_ctx = NULL};
+httpd_uri_t WebserverPulsecounter::uriHandlers[] = {
+    {.uri = "*",
+     .method = HTTP_GET,
+     .handler = getHandler,
+     .user_ctx = NULL},
+    {.uri = "/api/config",
+     .method = HTTP_POST,
+     .handler = postConfigHandler,
+     .user_ctx = NULL},
+    {.uri = "/api/update",
+     .method = HTTP_POST,
+     .handler = postUpdateHandler,
+     .user_ctx = NULL}};
+int WebserverPulsecounter::uriHandlersCount = sizeof(uriHandlers) / sizeof(uriHandlers[0]);
 
 void WebserverPulsecounter::setConfig(const NetworkConfig &config, bool useHttp)
 {
@@ -168,14 +172,6 @@ void WebserverPulsecounter::start(const char *serverCert, const char *caCert, co
     ESP_LOGI(TAG, "starting web server");
     reconfigureRequest = false;
     server.start(serverCert, caCert, privateKey);
-    indexUri.user_ctx = this;
-    postConfigUri.user_ctx = this;
-    if (0 != server.registerUriHandler(&indexUri))
-        ESP_LOGE(TAG, "unable to register %s", indexUri.uri);
-    if (0 != server.registerUriHandler(&postConfigUri))
-        ESP_LOGE(TAG, "unable to register %s", postConfigUri.uri);
-    if (0 != server.registerUriHandler(&postUpdateUri))
-        ESP_LOGE(TAG, "unable to register %s", postUpdateUri.uri);
 };
 void WebserverPulsecounter::stop()
 {

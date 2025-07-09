@@ -54,16 +54,19 @@ void Webserver::start(const char *serverCert, const char *caCert, const unsigned
         handle = NULL;
     }
     else
-        ESP_LOGI(TAG, "Started Web server!");
+    {
+        for (int idx = 0; idx < uriHandlerCount; idx++)
+        {
+            uriHandlers[idx].user_ctx = this;
+            httpd_register_uri_handler(handle, uriHandlers + idx);
+        }
+    }
 }
-esp_err_t Webserver::registerUriHandler(httpd_uri_t *uriHandler)
-{
-    httpd_unregister_uri_handler(handle, uriHandler->uri, uriHandler->method);
-    return httpd_register_uri_handler(handle, uriHandler);
-};
 
 void Webserver::stop()
 {
+    for (int idx = 0; idx < uriHandlerCount; idx++)
+        httpd_unregister_uri_handler(handle, uriHandlers[idx].uri, uriHandlers[idx].method);
     ESP_LOGI(TAG, "Webserver stop: %ld %s", (long)handle, isSsl ? "SSL" : "HTTP");
     // Stop the httpd server
     if (handle != NULL)

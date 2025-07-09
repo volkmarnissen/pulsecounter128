@@ -83,6 +83,7 @@ class PCMqttClient : public MqttClient
 {
     PulseCounterScheduler &scheduler;
     bool isConfigured;
+    const Config &config;
 #ifdef NATIVE
 protected:
 #endif
@@ -94,8 +95,14 @@ protected:
     };
 
 public:
-    PCMqttClient(const Config &config, PulseCounterScheduler &_scheduler) : MqttClient(config.getMqtt(), config.getNetwork()), scheduler(_scheduler) {
-                                                                            };
+    PCMqttClient(const Config &_config, PulseCounterScheduler &_scheduler) : MqttClient(), scheduler(_scheduler), config(_config)
+    {
+        setClientId(config.getNetwork().getHostname(), "scheduler");
+    };
+    int start(void)
+    {
+        return MqttClient::start(config.getMqtt(), config.getNetwork());
+    }
 };
 
 void PulseCounterScheduler::reset()

@@ -2,7 +2,7 @@
 #include <string>
 #include <vector>
 #include "common.hpp"
-
+static const std::string defaultHostName = "plscount";
 class OutputConfiguration
 {
 public:
@@ -47,7 +47,7 @@ public:
     const char *getSslHost() const { return sslhost.c_str(); };
     const char *getSslHostKey() const { return sslhostkey.c_str(); };
     const char *getSslCa() const { return sslca.c_str(); };
-    const char *getHostname() const { return hostname.c_str(); };
+    const char *getHostname() const { return (hostname.empty() ? defaultHostName.c_str() : hostname.c_str()); };
     const char *getNtpserver() const { return ntpserver.c_str(); };
 };
 

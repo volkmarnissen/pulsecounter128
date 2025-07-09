@@ -4,15 +4,18 @@
 #ifndef NATIVE
 #include "mqtt_client.h"
 #endif
+const int maxClientIdLength = 100;
 class MqttClient
 {
     // static MqttClient *theInstance;
     void logerror(const char *message, unsigned int code);
+    char clientId[maxClientIdLength];
 
 protected:
-    MqttClient(const MqttConfig &config, const NetworkConfig &network);
+    MqttClient();
+    void init(const MqttConfig &config, const NetworkConfig &network);
     virtual ~MqttClient();
-    std::string clientId;
+    void setClientId(const char *hostname, const char *clientId);
 #ifndef NATIVE
     esp_mqtt_client_handle_t client;
     static void eventHandler(void *handler_args, esp_event_base_t base, int32_t event_id, void *event_data);
@@ -23,7 +26,8 @@ protected:
     virtual void onError(const char *message, unsigned int code) {};
 
 public:
-    int start();
+    int start(const MqttConfig &config, const NetworkConfig &network);
+    const char *getClientId() const { return clientId; };
     virtual int stop();
     // static MqttClient &getMqttClient(const MqttConfig &config)
     // {
