@@ -4,6 +4,7 @@
 #include "network.hpp"
 #include "websrvplscount.hpp"
 #include "pcscheduler.hpp"
+#include "hardware.hpp"
 #include "esp_log.h"
 #include <chrono>
 #include <thread>
@@ -49,6 +50,7 @@ void configureResetButton()
 
 extern "C" void app_main()
 {
+    I2c::get()->writeOutputs(0xFF);
 
     Pulsecounter::setConfig(cfg);
     Pulsecounter::startThread();

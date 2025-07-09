@@ -58,9 +58,10 @@ void Pulsecounter::setConfig(const Config &cfg)
    omask_t initialOutputMask = outputMask;
    for (auto output : cfg.getOutputs())
    {
+      ESP_LOGI(TAG, "Output %d %d", output.getPort(), output.getConfiguration().type);
       Pulsecounter::setOutputConfiguration(output, cfg);
       if (output.getConfiguration().type == EMeterType || output.getConfiguration().type == WaterMeterType)
-         outputMask |= 1 << output.getPort();
+         outputMask &= ~(1 << output.getPort());
    }
 
    bool rc = i2c->writeOutputs(outputMask);
