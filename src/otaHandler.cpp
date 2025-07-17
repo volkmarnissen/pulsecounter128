@@ -59,6 +59,7 @@ esp_err_t postUpdateHandler(httpd_req_t *req)
     do
     {
         // Read the ota data
+        // ESP_LOGI(FNAME, "%d %d", content_length, ota_buff_size);
         if ((recv_len = httpd_req_recv(req, otaBuffer, std::min(content_length, ota_buff_size))) < 0)
         {
             if (recv_len == HTTPD_SOCK_ERR_TIMEOUT)

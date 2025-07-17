@@ -108,64 +108,55 @@ class ConfigLoad : public Config
 public:
     bool load(const char *buffer)
     {
-        try
+        JsonDocument doc;
+        DeserializationError error = deserializeJson(doc, buffer);
+        if (error)
         {
-
-            JsonDocument doc;
-            DeserializationError error = deserializeJson(doc, buffer);
-            if (error)
-            {
-                fprintf(stderr, "deserializeJson() failed: %s", error.c_str());
-                return false;
-            }
-            // json["numOfQues"] << "\n";
-            if (doc["counters"].is<JsonArray>())
-            {
-                JsonDocument countersArray = (doc["counters"]);
-                for (int i = 0; i < countersArray.size(); i++)
-                {
-                    counters.push_back(CounterConfigLoad(countersArray[i].as<JsonObject>()));
-                }
-            }
-            if (doc["outputs"].is<JsonArray>())
-            {
-                JsonDocument outputsArray = doc["outputs"];
-                for (int i = 0; i < outputsArray.size(); i++)
-                    outputs.push_back(OutputConfigLoad(outputsArray[i].as<JsonObject>()));
-            }
-            // else
-            // {
-            //     loge(tag, "No output ports specified in configuration");
-            //     return false;
-            // };
-            if (doc["network"].is<JsonObject>())
-                network = NetworkConfigLoad(doc["network"].as<JsonObject>());
-            else
-            {
-                loge(tag, "No network configuration specified in configuration");
-                return false;
-            };
-            if (doc["mqtt"].is<JsonObject>())
-                mqtt = MqttConfigLoad(doc["mqtt"].as<JsonObject>());
-            else
-            {
-                loge(tag, "No MQTT configuration specified in configuration");
-                return false;
-            };
-            if (doc["schedule"].is<JsonObject>())
-                schedule = ScheduleConfigLoad(doc["schedule"].as<JsonObject>());
-            else
-            {
-                loge(tag, "No Schedule configuration specified in configuration");
-                return false;
-            };
-            return true;
+            fprintf(stderr, "deserializeJson() failed: %s", error.c_str());
+            return false;
         }
-        catch (std::exception &e)
+        // json["numOfQues"] << "\n";
+        if (doc["counters"].is<JsonArray>())
         {
-            fprintf(stderr, "Exception: %s\n", e.what());
+            JsonDocument countersArray = (doc["counters"]);
+            for (int i = 0; i < countersArray.size(); i++)
+            {
+                counters.push_back(CounterConfigLoad(countersArray[i].as<JsonObject>()));
+            }
+        }
+        if (doc["outputs"].is<JsonArray>())
+        {
+            JsonDocument outputsArray = doc["outputs"];
+            for (int i = 0; i < outputsArray.size(); i++)
+                outputs.push_back(OutputConfigLoad(outputsArray[i].as<JsonObject>()));
+        }
+        // else
+        // {
+        //     loge(tag, "No output ports specified in configuration");
+        //     return false;
+        // };
+        if (doc["network"].is<JsonObject>())
+            network = NetworkConfigLoad(doc["network"].as<JsonObject>());
+        else
+        {
+            loge(tag, "No network configuration specified in configuration");
             return false;
         };
+        if (doc["mqtt"].is<JsonObject>())
+            mqtt = MqttConfigLoad(doc["mqtt"].as<JsonObject>());
+        else
+        {
+            loge(tag, "No MQTT configuration specified in configuration");
+            return false;
+        };
+        if (doc["schedule"].is<JsonObject>())
+            schedule = ScheduleConfigLoad(doc["schedule"].as<JsonObject>());
+        else
+        {
+            loge(tag, "No Schedule configuration specified in configuration");
+            return false;
+        };
+        return true;
     };
 };
 
