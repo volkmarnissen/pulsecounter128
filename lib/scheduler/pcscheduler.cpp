@@ -114,7 +114,11 @@ int PulseCounterScheduler::publish(const char *topic, const char *payload)
 {
     int rc = 3;
     if (PulseCounterScheduler::mqttClient != nullptr)
+    {
+        fprintf(stderr, "PCScheduler: mqttClient is in use abort publishing\n");
         return rc;
+    }
+
     PulseCounterScheduler::mqttClient = new PCMqttClient(config, *this);
     if (topic == nullptr || topic[0] == '\0')
     {

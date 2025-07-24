@@ -12,9 +12,11 @@
 #include <functional>
 #ifdef NATIVE
 
-MqttClient::MqttClient(const MqttConfig &config, const NetworkConfig &network) {};
-int MqttClient::start() { return 0; };
+MqttClient::MqttClient() {};
+int MqttClient::start(const MqttConfig &config, const NetworkConfig &network) { return 0; };
 int MqttClient::stop() { return 0; };
+void MqttClient::setClientId(const char *hostname, const char *clientId) {};
+
 void MqttClient::publish(const char *topic, const char *payload) {};
 MqttClient::~MqttClient() {};
 

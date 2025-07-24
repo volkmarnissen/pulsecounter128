@@ -67,7 +67,7 @@ extern "C" void app_main()
         if (msg == nullptr)
             pcscheduler.run();
         else
-            ESP_LOGE(TAG, "%s", msg);
+            ESP_LOGE(TAG, "PCScheduler not started %s", msg);
 
         webserver.setConfig(cfg.getNetwork());
     }

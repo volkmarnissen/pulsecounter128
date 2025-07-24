@@ -9,7 +9,7 @@ class MqttClient
 {
     // static MqttClient *theInstance;
     void logerror(const char *message, unsigned int code);
-    char clientId[maxClientIdLength];
+    char clientId[maxClientIdLength] = "clientId";
 
 protected:
     MqttClient();

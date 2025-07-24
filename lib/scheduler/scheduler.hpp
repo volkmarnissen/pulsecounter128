@@ -23,6 +23,8 @@ class Scheduler
     bool stopRequest = false;
     void executeLocal();
     void wait(int millis);
+    int maxWaitTime;
+    int getMaxWaitTime(std::vector<int> &, int biggest) const;
 #ifdef NATIVE
     // protected for native unit tests
 protected:
@@ -45,4 +47,6 @@ public:
     void stopThread();
     void joinThread();
     int getMilliSecondsToNextRun(struct timeval currentTime);
+    bool isStopped() const { return stopRequest; };
+    int getMaxWaitTime() const;
 };

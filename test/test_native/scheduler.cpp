@@ -32,6 +32,12 @@ void scheduler_stopThread()
     std::this_thread::sleep_for(std::chrono::milliseconds(30));
     sch.stopThread();
     sch.joinThread();
+    fprintf(stderr, "scheduler is stopped\n");
+    sch.run();
+    std::this_thread::sleep_for(std::chrono::milliseconds(30));
+    sch.stopThread();
+    sch.joinThread();
+    fprintf(stderr, "scheduler is stopped\n");
 }
 
 static void testGetMilliSecondsToNextRun(std::tm expectedTimeTm, int expectedTimeMs, std::tm testTimeTm, int testTimeMs)
@@ -84,9 +90,9 @@ void scheduler_getMilliSecondsToNextRun_NextDay()
 
     expectedTimeTm.tm_hour = 23;
     expectedTimeTm.tm_min = 50;
-    expectedTimeTm.tm_sec = 11;
+    expectedTimeTm.tm_sec = 12;
     expectedTimeTm.tm_mday = 8;
-    testGetMilliSecondsToNextRun(expectedTimeTm, 900, testTimeTm, 100);
+    testGetMilliSecondsToNextRun(expectedTimeTm, 0, testTimeTm, 100);
 }
 void scheduler_getMilliSecondsToNextRun_NextMonth()
 {
@@ -100,15 +106,103 @@ void scheduler_getMilliSecondsToNextRun_NextMonth()
 
     expectedTimeTm.tm_hour = 23;
     expectedTimeTm.tm_min = 50;
-    expectedTimeTm.tm_sec = 11;
+    expectedTimeTm.tm_sec = 12;
     expectedTimeTm.tm_mday = 1;
     expectedTimeTm.tm_mon = 1;
-    testGetMilliSecondsToNextRun(expectedTimeTm, 900, testTimeTm, 100);
+    testGetMilliSecondsToNextRun(expectedTimeTm, 0, testTimeTm, 100);
 }
+void scheduler_getMilliSecondsToNextRun_afterLastSecond()
+{
+    std::tm testTimeTm{};
+    std::tm expectedTimeTm = testTimeTm;
+    testTimeTm.tm_hour = 23;
+    testTimeTm.tm_min = 51;
+    testTimeTm.tm_sec = 54;
+    testTimeTm.tm_mday = 31;
+    testTimeTm.tm_mon = 0;
+
+    expectedTimeTm.tm_hour = 23;
+    expectedTimeTm.tm_min = 52;
+    expectedTimeTm.tm_sec = 12;
+    expectedTimeTm.tm_mday = 31;
+    expectedTimeTm.tm_mon = 0;
+    testGetMilliSecondsToNextRun(expectedTimeTm, 0, testTimeTm, 100);
+}
+void scheduler_getMilliSecondsToNextRun_positive()
+{
+    timeval t;
+    gettimeofday(&t, nullptr);
+    Config config = Config::getConfig(readFile("cypress/fixtures/configSchedule.json").c_str());
+    TestScheduler sch(const_cast<ScheduleConfig &>(config.getSchedule()));
+    int rc = sch.getMilliSecondsToNextRun(t);
+    TEST_ASSERT_TRUE_MESSAGE(rc > 0, "Expected greater than 0");
+}
+
+class TestScheduleConfig : public ScheduleConfig
+{
+public:
+    TestScheduleConfig(std::vector<int> &_hour, std::vector<int> _minute, std::vector<int> _second)
+    {
+        hour = _hour;
+        minute = _minute;
+        second = _second;
+    }
+};
+
+#define MAKEVECTOR(vname, aname) std::vector<int> vname(aname, aname + sizeof(aname) / sizeof(aname[0]));
+
+void scheduler_getMaxWaitTimeOneDay()
+{
+    int hour[] = {0};
+    int minute[] = {0};
+    int second[] = {0, 30};
+    MAKEVECTOR(hours, hour);
+    MAKEVECTOR(minutes, minute);
+    MAKEVECTOR(seconds, second);
+    TestScheduleConfig schedConfig(hours, minutes, seconds);
+    TestScheduler scheduler(schedConfig);
+
+    TEST_ASSERT_EQUAL_INT32_MESSAGE(24 * 60 * 60 * 1000, scheduler.getMaxWaitTime(), "expected 24 hours");
+}
+void scheduler_getMaxWaitTimeOneHour()
+{
+    int hour[] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23};
+    int minute[] = {0};
+    int second[] = {0, 30};
+    MAKEVECTOR(hours, hour);
+    MAKEVECTOR(minutes, minute);
+    MAKEVECTOR(seconds, second);
+    TestScheduleConfig schedConfig(hours, minutes, seconds);
+    TestScheduler scheduler(schedConfig);
+
+    TEST_ASSERT_EQUAL_INT32_MESSAGE(60 * 60 * 1000, scheduler.getMaxWaitTime(), "expected 1 hour");
+}
+
+void scheduler_getMaxWaitTimeOneMinue()
+{
+    int hour[] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23};
+    int minute[60];
+    int second[] = {0, 30};
+    for (int i = 0; i < 60; i++)
+        minute[i] = i;
+    MAKEVECTOR(hours, hour);
+    MAKEVECTOR(minutes, minute);
+    MAKEVECTOR(seconds, second);
+    TestScheduleConfig schedConfig(hours, minutes, seconds);
+    TestScheduler scheduler(schedConfig);
+
+    TEST_ASSERT_EQUAL_INT32_MESSAGE(30 * 1000, scheduler.getMaxWaitTime(), "expected 30 seconds");
+}
+
 void scheduler_tests()
 {
     RUN_TEST(scheduler_stopThread);
     RUN_TEST(scheduler_getMilliSecondsToNextRun);
     RUN_TEST(scheduler_getMilliSecondsToNextRun_NextDay);
     RUN_TEST(scheduler_getMilliSecondsToNextRun_NextMonth);
+    RUN_TEST(scheduler_getMilliSecondsToNextRun_afterLastSecond);
+    RUN_TEST(scheduler_getMilliSecondsToNextRun_positive);
+    RUN_TEST(scheduler_getMaxWaitTimeOneDay);
+    RUN_TEST(scheduler_getMaxWaitTimeOneHour);
+    RUN_TEST(scheduler_getMaxWaitTimeOneMinue);
 }

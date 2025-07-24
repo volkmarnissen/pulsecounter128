@@ -26,7 +26,7 @@ void config_lohmann()
 void config_addBuildDate()
 {
     std::string rc = Config::getJson();
-    TEST_ASSERT_EQUAL_STRING("{\n\"builddate\": \"20.2.2022 02:02:02\", \"someKey\": \"SomeValue\"}", rc.c_str());
+    TEST_ASSERT_EQUAL_STRING("{\n\"builddate\": \"\"20.2.2022 02:02:02\"\", \"someKey\": \"SomeValue\"}", rc.c_str());
 }
 void config_jsonCheck()
 {

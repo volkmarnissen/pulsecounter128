@@ -58,7 +58,9 @@ void Pulsecounter::setConfig(const Config &cfg)
    omask_t initialOutputMask = outputMask;
    for (auto output : cfg.getOutputs())
    {
+#ifndef NATIVE
       ESP_LOGI(TAG, "Output %d %d", output.getPort(), output.getConfiguration().type);
+#endif
       Pulsecounter::setOutputConfiguration(output, cfg);
       if (output.getConfiguration().type == EMeterType || output.getConfiguration().type == WaterMeterType)
          outputMask &= ~(1 << output.getPort());
