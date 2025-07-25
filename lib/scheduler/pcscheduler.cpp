@@ -17,6 +17,7 @@ PulseCounterScheduler::PulseCounterScheduler(Config &_config) : Scheduler(const_
 // Save current pulse counts send to MQTT
 void PulseCounterScheduler::execute()
 {
+    fprintf(stderr, "PulseCounterScheduler::execute\n");
     std::time_t dt = std::time(0);
     storePulseCounts(dt);
     publish(config.getMqtt().getTopic(), generatePayload().c_str());
@@ -40,6 +41,7 @@ void PulseCounterScheduler::storePulseCounts(time_t date) const
     for (auto it = begin(config.getCounters()); it != end(config.getCounters()); ++it)
     {
         uint32_t counts = Pulsecounter::getCounts(it->getOutputPort(), it->getInputPort());
+        fprintf(stderr, "storePulseCounts %d %lu\n", it->getInputPort(), counts);
         bool found = false;
         for (int a = 0; !found && a < counterStorageCount; a++)
             if (countersStorage[a].datetime == date && countersStorage[a].outputPort == it->getOutputPort())
@@ -47,7 +49,7 @@ void PulseCounterScheduler::storePulseCounts(time_t date) const
                 countersStorage[a].counts[it->getInputPort()] = counts;
                 found = true;
             };
-        if (!found)
+        if (!found && counterStorageCount < sizeof(countersStorage) / sizeof(countersStorage[0]) - 1)
         {
             countersStorage[counterStorageCount].datetime = date;
             countersStorage[counterStorageCount].outputPort = it->getOutputPort();
@@ -76,6 +78,7 @@ std::string PulseCounterScheduler::generatePayload() const
                 payload += buf;
             }
     }
+    counterStorageCount = 0;
     return "[" + payload + "]";
 };
 
@@ -132,6 +135,7 @@ int PulseCounterScheduler::publish(const char *topic, const char *payload)
     }
     else if (0 == PulseCounterScheduler::mqttClient->start())
     {
+        fprintf(stderr, "PCScheduler: publish %s %s\n", topic, payload);
         PulseCounterScheduler::mqttClient->publish(topic, payload);
         std::this_thread::sleep_for(std::chrono::milliseconds(400));
 

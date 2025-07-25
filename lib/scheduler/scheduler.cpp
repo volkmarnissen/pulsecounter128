@@ -87,7 +87,9 @@ void Scheduler::executeLocal()
         struct timeval now;
         gettimeofday(&now, NULL);
         int millis(getMilliSecondsToNextRun(now));
-        if (millis > 0)
+        if (millis == 0)
+            std::this_thread::sleep_for(std::chrono::seconds(1));
+        else if (millis > 0)
         {
             std::unique_lock<std::mutex> lk(cv_m);
             fprintf(stderr, "Wait for %d ms\n", millis);
@@ -96,10 +98,20 @@ void Scheduler::executeLocal()
             {
                 fprintf(stderr, "Executing\n");
                 execute();
+                struct timeval afterExecute;
+                gettimeofday(&afterExecute, NULL);
+                // Don't execute for the same second again.
+                if (afterExecute.tv_sec == now.tv_sec)
+                {
+                    std::this_thread::sleep_for(std::chrono::milliseconds(1001 - (afterExecute.tv_usec - now.tv_usec) * 1000));
+                }
             }
         }
         else
+        {
+            fprintf(stderr, "Waittime is negative: %d Stopping Thread\n", millis);
             stopRequest = true;
+        }
     }
     fprintf(stderr, "Scheduler Thread is stopped: No further executions until reconfiguration\n");
 };
@@ -165,7 +177,7 @@ int Scheduler::getMilliSecondsToNextRun(struct timeval currentTime)
     lastSecondOfDay.tm_min = *(minute.end() - 1);
     lastSecondOfDay.tm_sec = *(second.end() - 1);
     time_t lastSecondOfDayT = mktime(&lastSecondOfDay);
-    int nextMilliSecond = currentTime.tv_usec / 1000L;
+    int currentMilliSecond = currentTime.tv_usec / 1000L;
     // Need day switch?
     if (lastSecondOfDayT < currentTime.tv_sec || (currentTime.tv_usec >= 1000 && lastSecondOfDayT == currentTime.tv_sec))
     {
@@ -174,7 +186,7 @@ int Scheduler::getMilliSecondsToNextRun(struct timeval currentTime)
         datetime.tm_hour = 0;
         datetime.tm_min = 0;
         datetime.tm_sec = 0;
-        nextMilliSecond = 0;
+        currentMilliSecond = 0;
     }
     datetime.tm_hour = getNextTime(hour, datetime.tm_hour, 24); // hour needs no more changes
     if (datetime.tm_hour == -999)
@@ -184,7 +196,7 @@ int Scheduler::getMilliSecondsToNextRun(struct timeval currentTime)
     { // After last second of array increment minute
         datetime.tm_min++;
         datetime.tm_sec = 0;
-        nextMilliSecond = 0;
+        currentMilliSecond = 0;
     }
     lastSecondOfDayT = mktime(&lastSecondOfDay);
     if (lastSecondOfDayT < currentTime.tv_sec || (currentTime.tv_usec >= 1000 && lastSecondOfDayT == currentTime.tv_sec))
@@ -192,7 +204,7 @@ int Scheduler::getMilliSecondsToNextRun(struct timeval currentTime)
         datetime.tm_min = 0;
         lastSecondOfDay.tm_min = 0;
         datetime.tm_sec = 0;
-        nextMilliSecond = 0;
+        currentMilliSecond = 0;
     }
 
     datetime.tm_min = getNextTime(minute, datetime.tm_min, 60); // minute needs no more changes
@@ -204,27 +216,32 @@ int Scheduler::getMilliSecondsToNextRun(struct timeval currentTime)
     {
         datetime.tm_sec = 0;
         lastSecondOfDay.tm_sec = 0;
-        nextMilliSecond = 0;
+        currentMilliSecond = 0;
     }
     datetime.tm_sec = getNextTime(second, datetime.tm_sec, 60); // second needs no more changes
     if (datetime.tm_sec == -999)
         return -1;
     if (currentTime.tv_usec >= 1000 && lastSecondOfDayT == currentTime.tv_sec)
-        nextMilliSecond = 0;
+        currentMilliSecond = 0;
 
     struct timeval after;
     gettimeofday(&after, NULL);
     int consumedTime = (after.tv_usec - before.tv_usec) / 1000L;
     std::time_t d = std::mktime(&datetime);
-    int waitTime = (d - currentTime.tv_sec) * 1000L - nextMilliSecond - consumedTime;
-    if (waitTime > 0 && waitTime < maxWaitTime)
+
+    int waitTime = (d - currentTime.tv_sec) * 1000L - consumedTime;
+    if (waitTime > currentMilliSecond) // avoid negative waitTime
+        waitTime -= currentMilliSecond;
+    else
+        waitTime = 0;
+    if (waitTime >= 0 && waitTime < maxWaitTime)
         return waitTime;
     else
     {
         std::tm currentDateTime = *std::localtime(&currentTime.tv_sec);
-        fprintf(stderr, "Schedule: Wait Time is out of range current Time: %d %d %d next Run Time: %d %d %d WaitTime:%d \n",
-                currentDateTime.tm_hour, currentDateTime.tm_min, currentDateTime.tm_sec,
-                datetime.tm_hour, datetime.tm_min, datetime.tm_sec, waitTime);
+        fprintf(stderr, "Schedule: Wait Time is out of range current Time: %2d:%2d:%2d:%ld next Run Time: %2d:%2d:%2d:%d WaitTime:%d  consumed: %d\n",
+                currentDateTime.tm_hour, currentDateTime.tm_min, currentDateTime.tm_sec, currentTime.tv_usec / 1000,
+                datetime.tm_hour, datetime.tm_min, datetime.tm_sec, currentMilliSecond, waitTime, consumedTime);
         return -1;
     }
 }

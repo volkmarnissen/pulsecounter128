@@ -23,10 +23,11 @@ static void setValueString(std::string &value, const JsonObject &source, std::st
         value = "";
 };
 
-static void setValueInt(int &value, const JsonObject &source, const std::string name)
+template <class T>
+void setValue(T &value, const JsonObject &source, const std::string name)
 {
-    if (source[name].is<int>())
-        value = source[name].as<int>();
+    if (source[name].is<T>())
+        value = source[name].as<T>();
     else
         value = 0;
 };
@@ -46,9 +47,9 @@ public:
     CounterConfigLoad(const JsonObject &source)
     {
         setValueString(mqttname, source, "mqttname");
-        setValueInt(outputPort, source, "outputPort");
-        setValueInt(inputPort, source, "inputPort");
-        setValueInt(divider, source, "divider");
+        setValue<u_int8_t>(outputPort, source, "outputPort");
+        setValue<u_int16_t>(inputPort, source, "inputPort");
+        setValue<int>(divider, source, "divider");
     }
 };
 
@@ -59,8 +60,8 @@ public:
     OutputConfigLoad(const JsonObject &source)
     {
 
-        setValueInt((int &)config.type, source, "type");
-        setValueInt(port, source, "port");
+        setValue<int>((int &)config.type, source, "type");
+        setValue<int>(port, source, "port");
     };
 };
 
@@ -89,7 +90,7 @@ public:
             topic = "plscount";
         setValueString(username, source, "username");
         setValueString(password, source, "password");
-        setValueInt((int &)authenticationMethod, source, "authenticationMethod");
+        setValue<int>((int &)authenticationMethod, source, "authenticationMethod");
     }
 };
 class ScheduleConfigLoad : public ScheduleConfig

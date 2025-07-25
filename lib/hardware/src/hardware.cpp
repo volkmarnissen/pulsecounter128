@@ -117,9 +117,16 @@ bool I2c::initBus()
     };
     conf.master.clk_speed = I2C_MASTER_FREQ_HZ;
     if (ESP_OK != i2c_param_config(i2c_master_port, &conf))
+    {
+        ESP_LOGE(TAG, "Unable to config I2c");
         return false;
+    }
+
     if (ESP_OK != i2c_driver_install(i2c_master_port, conf.mode, 0, 0, 0))
+    {
+        ESP_LOGE(TAG, "Unable to install driver I2c");
         return false;
+    }
     isInitialized = true;
     return true;
 }

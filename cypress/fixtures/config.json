@@ -4,7 +4,7 @@
       "mqttname": "testNoOutput",
       "divider": 888,
       "inputPort": 6,
-      "outputPort": -1
+      "outputPort": 255
     },
     {
       "mqttname": "test1",
