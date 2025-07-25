@@ -60,9 +60,16 @@ void pcscheduler_storeCounts()
     setPulseCount(4, 5, 8000);
     pc.storePulseCounts(t); // different time, new entries for 0,0 and 4,5
     TEST_ASSERT_EQUAL_INT32(7200, pcs[2].counts[5]);
-    TEST_ASSERT_EQUAL_INT32(8000, pcs[6].counts[5]);
+    TEST_ASSERT_EQUAL_INT32(8000, pcs[5].counts[5]);
     std::string pyl = pc.generatePayload();
-    std::string expected = "[{\"name\":\"test1\"\n\
+    std::string expected = "[{\"name\":\"testNoOutput\"\n\
+\"date\":1566508946\n\
+\"value\":0\n\
+}\n\
+,{\"name\":\"testNoOutput\"\n\
+\"date\":1566508947\n\"value\":0\n\
+}\n,\
+{\"name\":\"test1\"\n\
 \"date\":1566508946\n\
 \"value\":3.6036\n\
 }\n\

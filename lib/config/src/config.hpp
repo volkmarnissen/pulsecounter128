@@ -22,14 +22,14 @@ public:
 class CounterConfig
 {
 protected:
-    uint16_t inputPort;
-    uint8_t outputPort;
+    unsigned short inputPort;
+    unsigned char outputPort;
     int divider;
     std::string mqttname;
 
 public:
-    uint16_t getInputPort() const { return inputPort; };
-    uint8_t getOutputPort() const { return outputPort; };
+    unsigned short getInputPort() const { return inputPort; };
+    unsigned char getOutputPort() const { return outputPort; };
     int getDivider() const { return divider; };
     const char *getMqttName() const { return mqttname.c_str(); };
 };

@@ -266,7 +266,7 @@ void readInput()
       std::this_thread::sleep_for(std::chrono::milliseconds(waitTimeInMillis));
    }
    I2c::deleteInstance();
-   ESP_LOGI(TAG, "Terminating Pulsecounter Thread");
+   fprintf(stderr, "Terminating Pulsecounter Thread\n");
 }
 
 #ifdef NATIVE

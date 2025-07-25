@@ -191,7 +191,7 @@ void pulsecounter_setOutputConfiguration()
     TestCounter c0(0, 0, 1000);
     TestCounter c1(1, 0, 500);
     TestCounter c2(2, 0, 1500);
-    TestCounter c3(4, -1, 300);
+    TestCounter c3(4, 255, 300);
     TestCounter *ca[] = {&c0, &c1, &c2, &c3};
     TestConfig cfg(oa, sizeof(oa) / sizeof(oa[0]), ca, sizeof(ca) / sizeof(ca[0]));
     Pulsecounter::setOutputConfiguration(o0, cfg);
