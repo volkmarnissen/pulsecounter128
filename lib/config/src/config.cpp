@@ -6,14 +6,16 @@
 #else
 #define BUILD_DATE "20.2.2022 02:02:02"
 #endif
+#include "pclog.hpp"
 #include <stdexcept>
 #include "ArduinoJson.h"
-static const char *tag = "config";
 #define STORAGE_NAMESPACE "nvs"
 static const char *storageKey = "config";
 static const char *emptyJson = "{ \"counters\" : [], \"outputs\" : [],\"network\":{\"hostname\" : \"plscount\"},\
 \"mqtt\": { \"topic\": \"plscount\"}\
 \"schedule\":{\"hour\" : [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23]},{\"minute\" : [0]},{\"second\" : [0]}}";
+
+#define TAG "config"
 
 static void setValueString(std::string &value, const JsonObject &source, std::string name)
 {
@@ -76,6 +78,7 @@ public:
         setValueString(sslca, source, "sslca");
         setValueString(hostname, source, "hostname");
         setValueString(ntpserver, source, "ntpserver");
+        setValueString(logdestination, source, "logdestination");
     }
 };
 class MqttConfigLoad : public MqttConfig
@@ -113,7 +116,7 @@ public:
         DeserializationError error = deserializeJson(doc, buffer);
         if (error)
         {
-            fprintf(stderr, "deserializeJson() failed: %s", error.c_str());
+            ESP_LOGE(TAG, "deserializeJson() failed: %s", error.c_str());
             return false;
         }
         // json["numOfQues"] << "\n";
@@ -133,28 +136,28 @@ public:
         }
         // else
         // {
-        //     loge(tag, "No output ports specified in configuration");
+        //     ESP_LOGE(TAG, "No output ports specified in configuration");
         //     return false;
         // };
         if (doc["network"].is<JsonObject>())
             network = NetworkConfigLoad(doc["network"].as<JsonObject>());
         else
         {
-            loge(tag, "No network configuration specified in configuration");
+            ESP_LOGE(TAG, "No network configuration specified in configuration");
             return false;
         };
         if (doc["mqtt"].is<JsonObject>())
             mqtt = MqttConfigLoad(doc["mqtt"].as<JsonObject>());
         else
         {
-            loge(tag, "No MQTT configuration specified in configuration");
+            ESP_LOGE(TAG, "No MQTT configuration specified in configuration");
             return false;
         };
         if (doc["schedule"].is<JsonObject>())
             schedule = ScheduleConfigLoad(doc["schedule"].as<JsonObject>());
         else
         {
-            loge(tag, "No Schedule configuration specified in configuration");
+            ESP_LOGE(TAG, "No Schedule configuration specified in configuration");
             return false;
         };
         return true;
@@ -196,7 +199,7 @@ void Config::setJson(const char *newJson)
     esp_err_t err = nvs_flash_init();
     if (err != ESP_OK)
     {
-        fprintf(stderr, "Initializing NVS failed\n");
+        ESP_LOGI(TAG, "Initializing NVS failed\n");
         return;
     }
 
@@ -205,10 +208,10 @@ void Config::setJson(const char *newJson)
     {
         err = nvs_set_blob(my_handle, storageKey, newJson, strlen(newJson) + 1);
         if (err != ESP_OK)
-            fprintf(stderr, "Unable to write Configuration to NVS\n");
+            ESP_LOGE(TAG, "Unable to write Configuration to NVS\n");
         err = nvs_commit(my_handle);
         if (err != ESP_OK)
-            fprintf(stderr, "Unable to commit Configuration to NVS\n");
+            ESP_LOGE(TAG, "Unable to commit Configuration to NVS\n");
         nvs_close(my_handle);
     }
     err = nvs_flash_deinit();
@@ -221,7 +224,7 @@ const std::string Config::getJson()
     esp_err_t err = nvs_flash_init();
     if (err != ESP_OK)
     {
-        fprintf(stderr, "Initializing NVS failed\n");
+        ESP_LOGE(TAG, "Initializing NVS failed\n");
         return "";
     }
 
@@ -231,7 +234,7 @@ const std::string Config::getJson()
         size_t required_size = 0;
         err = nvs_get_blob(my_handle, storageKey, NULL, &required_size);
         if (err != ESP_OK && err != ESP_ERR_NVS_NOT_FOUND)
-            fprintf(stderr, "Unable to read Configuration from NVS\n");
+            ESP_LOGE(TAG, "Unable to read Configuration from NVS\n");
         else if (err == ESP_ERR_NVS_NOT_FOUND)
             return emptyJson;
         else
@@ -242,7 +245,7 @@ const std::string Config::getJson()
                 err = nvs_get_blob(my_handle, "config", configJson, &required_size);
                 if (err != ESP_OK)
                 {
-                    fprintf(stderr, "Unable to read Configuration from NVS\n");
+                    ESP_LOGE(TAG, "Unable to read Configuration from NVS\n");
                 }
                 rc = Config::addBuildDate(configJson);
             }
@@ -252,7 +255,7 @@ const std::string Config::getJson()
     }
     else
     {
-        fprintf(stderr, "error %d\n", err);
+        ESP_LOGE(TAG, "error %d\n", err);
     }
     nvs_flash_deinit();
     return rc;

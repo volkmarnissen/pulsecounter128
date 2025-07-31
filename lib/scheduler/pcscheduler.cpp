@@ -1,11 +1,13 @@
 #include "pcscheduler.hpp"
 #include "pulsecounter.hpp"
 #include "mqtt.hpp"
+#include <functional>
 #include <stdio.h>
 #include <string.h>
 #include <chrono>
 #include <thread>
-
+#include "pclog.hpp"
+#define TAG "pcscheduler"
 static CountersStorage countersStorage[128];
 static uint8_t counterStorageCount = 0;
 
@@ -17,10 +19,10 @@ PulseCounterScheduler::PulseCounterScheduler(Config &_config) : Scheduler(const_
 // Save current pulse counts send to MQTT
 void PulseCounterScheduler::execute()
 {
-    fprintf(stderr, "PulseCounterScheduler::execute\n");
+    ESP_LOGI(TAG, "PulseCounterScheduler::execute\n");
     std::time_t dt = std::time(0);
     storePulseCounts(dt);
-    publish(config.getMqtt().getTopic(), generatePayload().c_str());
+    publish(generatePayload().c_str());
     // build MQTT payload
     // MQTT publish
     // Success:
@@ -41,7 +43,7 @@ void PulseCounterScheduler::storePulseCounts(time_t date) const
     for (auto it = begin(config.getCounters()); it != end(config.getCounters()); ++it)
     {
         uint32_t counts = Pulsecounter::getCounts(it->getOutputPort(), it->getInputPort());
-        fprintf(stderr, "storePulseCounts %d %lu\n", it->getInputPort(), counts);
+        ESP_LOGI(TAG, "storePulseCounts %d %lu\n", it->getInputPort(), (unsigned long)counts);
         bool found = false;
         for (int a = 0; !found && a < counterStorageCount; a++)
             if (countersStorage[a].datetime == date && countersStorage[a].outputPort == it->getOutputPort())
@@ -84,26 +86,33 @@ std::string PulseCounterScheduler::generatePayload() const
 
 class PCMqttClient : public MqttClient
 {
+
     PulseCounterScheduler &scheduler;
     bool isConfigured;
     const Config &config;
+    const std::string topic;
+    const std::string payload;
 #ifdef NATIVE
 protected:
 #endif
-    virtual void onPublished(const char *topic, const char *payload)
+    static void onPublished(MqttClient *client, const char *topic, const char *payload)
     {
-        scheduler.reset();
+        ((PCMqttClient *)client)->scheduler.reset();
     };
-    virtual void onError(const char *message, unsigned int code) {
+    static void onConnected(MqttClient *client, const char *, const char *)
+    {
+        client->publish(((PCMqttClient *)client)->topic.c_str(), ((PCMqttClient *)client)->payload.c_str());
     };
 
 public:
-    PCMqttClient(const Config &_config, PulseCounterScheduler &_scheduler) : MqttClient(), scheduler(_scheduler), config(_config)
+    PCMqttClient(const Config &_config, PulseCounterScheduler &_scheduler, const std::string &_payload) : MqttClient(), scheduler(_scheduler), config(_config), topic(config.getMqtt().getTopic()), payload(_payload)
     {
         setClientId(config.getNetwork().getHostname(), "scheduler");
     };
     int start(void)
     {
+        registerListener(MQTT_EV_PUBLISHED, PCMqttClient::onPublished);
+        registerListener(MQTT_EV_CONNECTED, PCMqttClient::onConnected);
         return MqttClient::start(config.getMqtt(), config.getNetwork());
     }
 };
@@ -113,37 +122,30 @@ void PulseCounterScheduler::reset()
     counterStorageCount = 0;
 }
 
-int PulseCounterScheduler::publish(const char *topic, const char *payload)
+int PulseCounterScheduler::publish(const std::string &payload)
 {
     int rc = 3;
     if (PulseCounterScheduler::mqttClient != nullptr)
     {
-        fprintf(stderr, "PCScheduler: mqttClient is in use abort publishing\n");
+        ESP_LOGI(TAG, "PCScheduler: mqttClient is in use abort publishing\n");
         return rc;
     }
 
-    PulseCounterScheduler::mqttClient = new PCMqttClient(config, *this);
-    if (topic == nullptr || topic[0] == '\0')
+    PulseCounterScheduler::mqttClient = new PCMqttClient(config, *this, payload);
+    if (payload.empty())
     {
-        fprintf(stderr, "PCScheduler: No topic passed to publish %s", payload);
-        rc = 1;
-    }
-    else if (payload == nullptr || payload[0] == '\0')
-    {
-        fprintf(stderr, "PCScheduler: No payload passed for topic %s", topic);
+        ESP_LOGI(TAG, "PCScheduler: Payload is empty");
         rc = 1;
     }
     else if (0 == PulseCounterScheduler::mqttClient->start())
     {
-        fprintf(stderr, "PCScheduler: publish %s %s\n", topic, payload);
-        PulseCounterScheduler::mqttClient->publish(topic, payload);
+        ESP_LOGI(TAG, "PCScheduler: publishing %s %s\n", config.getMqtt().getTopic(), payload.c_str());
         std::this_thread::sleep_for(std::chrono::milliseconds(400));
-
         rc = 0;
     }
     else
     {
-        fprintf(stderr, "Unable to start MQTT Client for sending pulsecounter result");
+        ESP_LOGI(TAG, "Unable to start MQTT Client for sending pulsecounter result");
         delete PulseCounterScheduler::mqttClient;
         PulseCounterScheduler::mqttClient = nullptr;
         rc = 2;

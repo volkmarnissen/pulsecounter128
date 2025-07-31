@@ -33,7 +33,8 @@
     "sslhost": "host",
     "sslhostkey": "hostkey",
     "sslca": "ca",
-    "hostname": "hostname"
+    "hostname": "hostname",
+    "logdestination": "logdestination"
   },
   "mqtt": {
     "mqtturl": "mqtts://blabla",

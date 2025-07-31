@@ -6,7 +6,8 @@
 #include <ctime>
 #include <cmath>
 #include <thread>
-
+#include "pclog.hpp"
+#define TAG "schedulertest"
 class TestScheduler : public Scheduler
 {
 public:
@@ -32,12 +33,12 @@ void scheduler_stopThread()
     std::this_thread::sleep_for(std::chrono::milliseconds(30));
     sch.stopThread();
     sch.joinThread();
-    fprintf(stderr, "scheduler is stopped\n");
+    ESP_LOGI(TAG, "scheduler is stopped\n");
     sch.run();
     std::this_thread::sleep_for(std::chrono::milliseconds(30));
     sch.stopThread();
     sch.joinThread();
-    fprintf(stderr, "scheduler is stopped\n");
+    ESP_LOGI(TAG, "scheduler is stopped\n");
 }
 
 static void testGetMilliSecondsToNextRun(std::tm expectedTimeTm, int expectedTimeMs, std::tm testTimeTm, int testTimeMs)

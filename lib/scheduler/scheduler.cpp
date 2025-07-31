@@ -3,7 +3,8 @@
 #include <algorithm>
 #include <sys/time.h>
 #include <ctime>
-
+#include "pclog.hpp"
+#define TAG "scheduler"
 // template <typename T>
 // void CopyableVector<T>::operator=(const T &vec)
 // {
@@ -77,7 +78,7 @@ int Scheduler::getMaxWaitTime(std::vector<int> &v, int biggest) const
 
 void Scheduler::run()
 {
-    fprintf(stderr, "Scheduler is running\n");
+    ESP_LOGI(TAG, "Scheduler is running\n");
     t = new std::thread(&Scheduler::executeLocal, this);
 };
 void Scheduler::executeLocal()
@@ -92,11 +93,11 @@ void Scheduler::executeLocal()
         else if (millis > 0)
         {
             std::unique_lock<std::mutex> lk(cv_m);
-            fprintf(stderr, "Wait for %d ms\n", millis);
+            ESP_LOGI(TAG, "Wait for %d ms\n", millis);
             cv.wait_for(lk, std::chrono::milliseconds(millis));
             if (!stopRequest)
             {
-                fprintf(stderr, "Executing\n");
+                ESP_LOGI(TAG, "Executing\n");
                 execute();
                 struct timeval afterExecute;
                 gettimeofday(&afterExecute, NULL);
@@ -109,11 +110,11 @@ void Scheduler::executeLocal()
         }
         else
         {
-            fprintf(stderr, "Waittime is negative: %d Stopping Thread\n", millis);
+            ESP_LOGI(TAG, "Waittime is negative: %d Stopping Thread\n", millis);
             stopRequest = true;
         }
     }
-    fprintf(stderr, "Scheduler Thread is stopped: No further executions until reconfiguration\n");
+    ESP_LOGI(TAG, "Scheduler Thread is stopped: No further executions until reconfiguration\n");
 };
 
 void Scheduler::stopThread()
@@ -159,7 +160,7 @@ static bool vectorIsEmpty(std::vector<int> &v, const char *name)
 {
     if (v.begin() == v.end())
     {
-        fprintf(stderr, "Schedule: No %s configured. No execution", name);
+        ESP_LOGI(TAG, "Schedule: No %s configured. No execution", name);
         return true;
     }
     return false;
@@ -239,9 +240,9 @@ int Scheduler::getMilliSecondsToNextRun(struct timeval currentTime)
     else
     {
         std::tm currentDateTime = *std::localtime(&currentTime.tv_sec);
-        fprintf(stderr, "Schedule: Wait Time is out of range current Time: %2d:%2d:%2d:%ld next Run Time: %2d:%2d:%2d:%d WaitTime:%d  consumed: %d\n",
-                currentDateTime.tm_hour, currentDateTime.tm_min, currentDateTime.tm_sec, currentTime.tv_usec / 1000,
-                datetime.tm_hour, datetime.tm_min, datetime.tm_sec, currentMilliSecond, waitTime, consumedTime);
+        ESP_LOGI(TAG, "Schedule: Wait Time is out of range current Time: %2d:%2d:%2d:%ld next Run Time: %2d:%2d:%2d:%d WaitTime:%d  consumed: %d\n",
+                 currentDateTime.tm_hour, currentDateTime.tm_min, currentDateTime.tm_sec, currentTime.tv_usec / 1000,
+                 datetime.tm_hour, datetime.tm_min, datetime.tm_sec, currentMilliSecond, waitTime, consumedTime);
         return -1;
     }
 }

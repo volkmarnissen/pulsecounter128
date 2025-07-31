@@ -6,9 +6,8 @@
 #include <string.h>
 #include <iostream>
 #include <cassert>
-#ifndef NATIVE
-#include <esp_log.h>
-#endif
+#include "pclog.hpp"
+
 static const char *TAG = "pulsecounter";
 
 // 20ms wait time before reading inputs again
@@ -37,7 +36,7 @@ bool Pulsecounter::inputHasRisingEdge(PulseCounterType &pulseCounter)
 
    if (pulseCounter.numOutPort != 0xFF)
    {
-      fprintf(stderr, "OutputPort InputHasRisingEdge\n");
+      ESP_LOGI(TAG, "OutputPort InputHasRisingEdge\n");
       pMask = outputData[pulseCounter.numOutPort].previousInputMask & (1 << pulseCounter.numInputPort);
       cMask = outputData[pulseCounter.numOutPort].currentInputMask & (1 << pulseCounter.numInputPort);
    }
@@ -213,7 +212,7 @@ void Pulsecounter::setPulseCounter(uint8_t outputPort, uint8_t inputPort)
 
 void Pulsecounter::countPulses()
 {
-   fprintf(stderr, "countPulses 0x%2x 0x%2x\n", noOutputData.currentInputMask, noOutputData.previousInputMask);
+   ESP_LOGI(TAG, "countPulses 0x%2x 0x%2x\n", noOutputData.currentInputMask, noOutputData.previousInputMask);
    for (int a = 0; a < pulseCounterCount; a++)
    {
       PulseCounterType &pc = pulseCounters[a];
@@ -233,7 +232,7 @@ uint32_t Pulsecounter::getCounts(uint8_t outputPort, uint8_t inputPort)
    for (int a = 0; a < pulseCounterCount; a++)
       if (pulseCounters[a].numInputPort == inputPort && pulseCounters[a].numOutPort == outputPort)
       {
-         fprintf(stderr, "getCounts %d %lu\n", inputPort, pulseCounters[a].counter);
+         ESP_LOGI(TAG, "getCounts %d %lu\n", inputPort, (unsigned long)pulseCounters[a].counter);
          return pulseCounters[a].counter;
       }
 
@@ -266,7 +265,7 @@ void readInput()
       std::this_thread::sleep_for(std::chrono::milliseconds(waitTimeInMillis));
    }
    I2c::deleteInstance();
-   fprintf(stderr, "Terminating Pulsecounter Thread\n");
+   ESP_LOGI(TAG, "Terminating Pulsecounter Thread\n");
 }
 
 #ifdef NATIVE
@@ -315,7 +314,7 @@ void Pulsecounter::startThread()
    auto cfg = esp_pthread_get_default_config();
    esp_pthread_set_cfg(&cfg);
 #endif
-   fprintf(stderr, "Starting Pulsecounter Thread\n");
+   ESP_LOGI(TAG, "Starting Pulsecounter Thread\n");
 
    assert(readInputThread == NULL);
    runReadInputThread = true;
@@ -324,7 +323,7 @@ void Pulsecounter::startThread()
 
 void Pulsecounter::stopThread()
 {
-   fprintf(stderr, "Stopping Pulsecounter Thread\n");
+   ESP_LOGI(TAG, "Stopping Pulsecounter Thread\n");
    runReadInputThread = false;
    // This will stop the thread gracefully
    readInputThread = NULL;

@@ -17,7 +17,7 @@ public:
     Config &config;
     void storePulseCounts(time_t date) const;
     std::string generatePayload() const;
-    int publish(const char *topic, const char *payload);
+    int publish(const std::string &payload);
 
 public:
     PulseCounterScheduler(Config &_config);

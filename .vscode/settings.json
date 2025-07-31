@@ -73,6 +73,8 @@
         "i2cdev.h": "c",
         "condition_variable": "cpp",
         "chrono": "cpp",
-        "mutex": "cpp"
+        "mutex": "cpp",
+        "sys.h": "c",
+        "task.h": "c"
     }
 }

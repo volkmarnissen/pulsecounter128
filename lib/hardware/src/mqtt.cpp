@@ -116,7 +116,7 @@ int MqttClient::stop(void)
 // Forwards to mqttClient->subscribeAndPublish() and onMessage();
 void MqttClient::logerror(const char *message, unsigned int code)
 {
-    this->onError(message, code);
+    this->triggerEvent(MQTT_EV_ERROR, message, (const char *)code);
     if (code != ESP_OK)
     {
         log_error_if_nonzero(message, code);
@@ -132,7 +132,7 @@ void MqttClient::eventHandler(void *handler_args, esp_event_base_t base, int32_t
     {
     case MQTT_EVENT_CONNECTED:
         ESP_LOG_EVENT(TAG, "MQTT_EVENT_CONNECTED \"%s\"", mqttClient->getClientId());
-        mqttClient->subscribeAndPublish();
+        mqttClient->triggerEvent(MQTT_EV_CONNECTED);
         break;
     case MQTT_EVENT_DISCONNECTED:
         ESP_LOG_EVENT(TAG, "MQTT_EVENT_DISCONNECTED \"%s\"", mqttClient->getClientId());
@@ -148,11 +148,11 @@ void MqttClient::eventHandler(void *handler_args, esp_event_base_t base, int32_t
         break;
     case MQTT_EVENT_PUBLISHED:
         ESP_LOG_EVENT(TAG, "MQTT_EVENT_PUBLISHED, msg_id=%d", event->msg_id);
-        mqttClient->onPublished(event->topic, event->data);
+        mqttClient->triggerEvent(MQTT_EV_PUBLISHED, event->topic, event->data);
         break;
     case MQTT_EVENT_DATA:
         ESP_LOG_EVENT(TAG, "MQTT_EVENT_DATA \"%s\"", mqttClient->getClientId());
-        mqttClient->onMessage(event->topic, event->data);
+        mqttClient->triggerEvent(MQTT_EV_MESSAGE, event->topic, event->data);
         break;
     case MQTT_EVENT_ERROR:
         ESP_LOG_EVENT(TAG, "MQTT_EVENT_ERROR \"%s\"", mqttClient->getClientId());
@@ -163,12 +163,15 @@ void MqttClient::eventHandler(void *handler_args, esp_event_base_t base, int32_t
             mqttClient->logerror("reported from tls stack", event->error_handle->esp_tls_stack_err);
             mqttClient->logerror("captured as transport's socket errno", event->error_handle->esp_transport_sock_errno);
             mqttClient->logerror(strerror(event->error_handle->esp_transport_sock_errno), event->error_handle->esp_transport_sock_errno);
+            mqttClient->triggerEvent(MQTT_EV_ERROR, "TCP error", (const char *)1);
             break;
         case MQTT_ERROR_TYPE_CONNECTION_REFUSED:
             mqttClient->logerror("Connection refused", 1);
+            mqttClient->triggerEvent(MQTT_EV_ERROR, "Connection refused", (const char *)1);
             break;
         default:
             mqttClient->logerror("Other error", 1);
+            mqttClient->triggerEvent(MQTT_EV_ERROR, "Other error", (const char *)1);
         }
         break;
     default:

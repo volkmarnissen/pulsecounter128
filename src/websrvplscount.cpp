@@ -55,36 +55,42 @@ static esp_err_t getHandler(httpd_req_t *r)
 class ValidationMqttClient : public MqttClient
 {
     httpd_req_t *req;
-    const char *content;
+    std::string content;
+    const NetworkConfig &network;
 
 public:
     bool reconfigureRequest;
     virtual ~ValidationMqttClient() {
     };
-    ValidationMqttClient(httpd_req_t *_req, const char *_content, const NetworkConfig &network) : MqttClient(), req(_req), content(_content), reconfigureRequest(false)
+    ValidationMqttClient(httpd_req_t *_req, const char *_content, const NetworkConfig &_network) : MqttClient(), req(_req), content(_content), network(_network), reconfigureRequest(false)
     {
         setClientId(network.getHostname(), "validation");
     }
-    virtual void subscribeAndPublish()
+    static void onConnected(MqttClient *client, const char *, const char *)
     {
-        Config::setJson(content);
-        httpd_resp_set_hdr(req, "Content-Type", "application/json");
-        httpd_resp_send(req, "", HTTPD_RESP_USE_STRLEN);
-        reconfigureRequest = true;
+        Config::setJson(((ValidationMqttClient *)client)->content.c_str());
+        httpd_resp_set_hdr(((ValidationMqttClient *)client)->req, "Content-Type", "application/json");
+        httpd_resp_send(((ValidationMqttClient *)client)->req, "", HTTPD_RESP_USE_STRLEN);
+        ((ValidationMqttClient *)client)->reconfigureRequest = true;
     }
-    virtual void onError(const char *message, unsigned int code)
+    static void onError(MqttClient *client, const char *message, const char *code)
     {
         char buf[512];
-        sprintf(buf, "[{ \"errorcode\": %d, \"errormessage\": \"%s\"}]", code, message);
-        httpd_resp_set_hdr(req, "Content-Type", "application/json");
-        httpd_resp_set_status(req, "422 Unprocessable Entity");
-        httpd_resp_send(req, buf, HTTPD_RESP_USE_STRLEN);
+        sprintf(buf, "[{ \"errorcode\": %d, \"errormessage\": \"%s\"}]", (int)code, message);
+        httpd_resp_set_hdr(((ValidationMqttClient *)client)->req, "Content-Type", "application/json");
+        httpd_resp_set_status(((ValidationMqttClient *)client)->req, "422 Unprocessable Entity");
+        httpd_resp_send(((ValidationMqttClient *)client)->req, buf, HTTPD_RESP_USE_STRLEN);
     }
     int stop()
     {
         int rc = MqttClient::stop();
         delete this;
         return rc;
+    }
+    int start(const MqttConfig &config)
+    {
+        registerListener(MQTT_EV_CONNECTED, ValidationMqttClient::onConnected);
+        return MqttClient::start(config, network);
     }
 };
 static esp_err_t postConfigHandler(httpd_req_t *req)
@@ -132,12 +138,10 @@ void WebserverPulsecounter::startValidationMqttClient(httpd_req_t *req, const ch
     if (validationMqttClient != nullptr)
         delete validationMqttClient;
     validationMqttClient = new ValidationMqttClient(req, content, network);
-    if (0 == validationMqttClient->start(config, network))
-    {
-        std::this_thread::sleep_for(std::chrono::milliseconds(1000));
-        if (validationMqttClient->reconfigureRequest)
-            reconfigureRequest = true;
-    }
+    validationMqttClient->start(config);
+    std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+    if (validationMqttClient->reconfigureRequest)
+        reconfigureRequest = true;
 }
 /* URI handler structure for GET /uri */
 httpd_uri_t WebserverPulsecounter::uriHandlers[] = {

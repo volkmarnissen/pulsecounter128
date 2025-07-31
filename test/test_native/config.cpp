@@ -2,6 +2,8 @@
 #include "config.hpp"
 #include "native.hpp"
 #include "ArduinoJson.h"
+#include "pclog.hpp"
+#define TAG "configtest"
 void config_simple()
 {
 
@@ -36,11 +38,11 @@ void config_jsonCheck()
     DeserializationError error = deserializeJson(doc, readFile("cypress/fixtures/config.json"));
     if (error)
     {
-        fprintf(stderr, "deserializeJson() failed: %s", error.c_str());
+        ESP_LOGI(TAG, "deserializeJson() failed: %s", error.c_str());
     }
     std::string out;
     serializeJson(doc, out);
-    fprintf(stderr, "serializeJson: %s", out.c_str());
+    ESP_LOGI(TAG, "serializeJson: %s", out.c_str());
 }
 
 void config_tests()

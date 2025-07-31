@@ -11,6 +11,7 @@ void Webserver::start(const char *serverCert, const char *caCert, const unsigned
     stop();
     httpd_handle_t server = NULL;
     httpd_config_t config = HTTPD_DEFAULT_CONFIG();
+    config.stack_size = 8192;
     httpd_ssl_config_t sslConfig = HTTPD_SSL_CONFIG_DEFAULT();
     bool sslIsConfigured = false;
     if (serverCert != nullptr && strlen(serverCert) &&

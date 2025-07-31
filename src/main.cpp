@@ -9,13 +9,32 @@
 #include <chrono>
 #include <thread>
 #include <driver/gpio.h>
-
+#include "udp_logging.h"
 static const char *TAG = "main";
 const gpio_num_t resetButtonPin = GPIO_NUM_0;
 WebserverPulsecounter webserver;
 Ethernet eth;
 Config cfg = Config::getConfig(Config::getJson().c_str());
 PulseCounterScheduler pcscheduler(cfg);
+void configureUdpLogging()
+{
+    ESP_LOGI(TAG, "UDP Loggin configuration");
+    va_list l;
+    udp_logging_free(l);
+    cfg = Config::getConfig(Config::getJson().c_str());
+    if (cfg.getNetwork().getLogDestination() != nullptr)
+    {
+        std::string c(cfg.getNetwork().getLogDestination());
+        int pos;
+        if (std::string::npos != (pos = c.find(":")))
+        {
+            std::string node = c.substr(0, pos);
+            std::string service = c.substr(pos + 1);
+            udp_logging_init(node.c_str(), service.c_str(), udp_logging_vprintf);
+        }
+    }
+}
+
 void reconfigure()
 {
     ESP_LOGI(TAG, "Reconfiguring");
@@ -23,6 +42,7 @@ void reconfigure()
     if (nullptr == pcscheduler.checkConfiguration(cfg))
         pcscheduler.setConfig(cfg);
     webserver.setConfig(cfg.getNetwork());
+    configureUdpLogging();
 }
 void reconfigureHttp()
 {
@@ -48,6 +68,12 @@ void configureResetButton()
     gpio_config(&io_conf);
 }
 
+void shutdownHandler(void)
+{
+    va_list l;
+    udp_logging_free(l);
+}
+
 extern "C" void app_main()
 {
     I2c::get()->writeOutputs(0xFF);
@@ -55,14 +81,23 @@ extern "C" void app_main()
     Pulsecounter::setConfig(cfg);
     Pulsecounter::startThread();
     configureResetButton();
+#ifndef CONFIG_LOG_UDP_IP
+#define CONFIG_LOG_UDP_IP "ubuntumsi.lan"
+#endif
+#ifndef CONFIG_LOG_UDP_PORT
+#define CONFIG_LOG_UDP_PORT "3333"
+#endif
+
     esp_log_level_set("mqtt", ESP_LOG_DEBUG);
     esp_log_level_set("wbsrvplscount", ESP_LOG_DEBUG);
+    esp_register_shutdown_handler(shutdownHandler);
     eth.setHostname(cfg.getNetwork().getHostname());
     eth.setNtpServer(cfg.getNetwork().getNtpserver());
     eth.init();
 
     if (eth.waitForConnection())
     {
+        configureUdpLogging();
         const char *msg = pcscheduler.checkConfiguration(cfg);
         if (msg == nullptr)
             pcscheduler.run();
@@ -73,7 +108,7 @@ extern "C" void app_main()
     }
     else
     {
-        loge(TAG, "Unable to connect to the internet");
+        loge(TAG, "Unable to connect to network: Press reset button to try again");
     }
     while (true)
     {
