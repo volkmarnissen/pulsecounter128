@@ -72,14 +72,16 @@ input{
     min-height: 20pt;
     font-size: large;  
 }
-#uploadButton{
+.uploadButton{
     min-height: 20pt;
-    width: 300pt;
-}
-#updateFile{
     width: 200pt;
+}
+
+.uploadFile{
+    width: 300pt;
     min-height: 20pt;
 }
+
 #progress-num{
     width: 120px;
     min-height: 20pt;

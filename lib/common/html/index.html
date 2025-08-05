@@ -100,17 +100,27 @@
                             </div>
                             <div >
                                 <div class="inputLabel">
-                                    Upload Firmware
+                                    Upload
                                 </div>
                                 <div class="inputBody">
                                     <div>
-                                        <label for="updateFile">Firmware to upload</label>
-                                        <input type="file" id="updateFile" accept=".bin" >
+                                        <label for="updateFile">Firmware File</label>
+                                        <input type="file" id="updateFile" class="uploadFile" accept=".bin" >
                                     </div>
+                                    <div>
                                         <button id="uploadButton" type="button" disabled class="uploadButton">Upload Firmware</button>
+                                    </div>
                                     <div>
                                         <div id="progress-bar" class="hidden"></div>
                                     </div>
+                                    <div  >
+                                        <label for="importConfig">Config File</label>
+                                        <input type="file" id="importConfig" class="uploadFile"  accept=".json" >
+                                    </div>
+                                    <div>
+                                        <button id="importConfigButton" type="button" disabled class="uploadButton">Import Configuration</button>
+                                    </div>
+
                                     <div class="tooltip">
                                         <label for="logdestination">Log. Dest. Server </label>
                                         <input type="text" id="logdestination" name="logdestination" placeholder="myserver.lan:3333" >
@@ -135,6 +145,7 @@
                 </div>
             </div>
             <button type="submit" class="submitButton" >Save Changes</button>
+            <a href='#' onclick="downloadConfiguration()">Download Configuration(plscount.json)</a>
         </form>
                 <div id="inputTemplate" class="input">
                     <div class="inputLabel">
