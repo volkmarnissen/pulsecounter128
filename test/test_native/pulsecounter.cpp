@@ -8,6 +8,14 @@ using namespace Pulsecounter;
 static int readInputCount = 0;
 static omask_t outputMask = 0;
 
+extern OutputData outputData[8];
+extern NoOutputData noOutputData;
+static bool resetRequest = false;
+
+// local static data =====================
+extern PulseCounterType pulseCounters[maxPulseCounters];
+extern int pulseCounterCount;
+
 imask_t mock_readInputPorts2()
 {
     static imask_t currentState0 = 0;
@@ -182,6 +190,27 @@ public:
             counters.push_back(*(_counters[idx]));
     }
 };
+extern void readInputsRisingEdgeNoOutputs();
+void testCountPulses(imask_t imaskp, imask_t imaskc, int expPcNum, const char *msg)
+{
+    noOutputData.currentInputMask = imaskc;
+    noOutputData.previousInputMask = imaskp;
+    pulseCounterCount = 8;
+    for (int idx = 0; idx < pulseCounterCount; idx++)
+    {
+        pulseCounters[idx].numOutPort = 0xFF;
+        pulseCounters[idx].numInputPort = idx;
+        pulseCounters[idx].counter = 0;
+    }
+    Pulsecounter::countPulses();
+    TEST_ASSERT_EQUAL_INT32_MESSAGE(1, pulseCounters[expPcNum].counter, msg);
+}
+void pulsecounter_countPulses()
+{
+    testCountPulses(0xff3f, 0xffbf, 7, "0xff3f, 0xffbf");
+    testCountPulses(0xff7f, 0xffff, 7, "0xff7f, 0xffff");
+}
+
 
 void pulsecounter_setOutputConfiguration()
 {
@@ -206,6 +235,7 @@ void pulsecounter_setOutputConfiguration()
 void pulsecounter_tests()
 {
     RUN_TEST(pulsecounter_setOutputConfiguration);
+    RUN_TEST(pulsecounter_countPulses);
     RUN_TEST(pulsecounter_simple);
     RUN_TEST(pulsecounter_inputOnly);
     RUN_TEST(pulsecounter_readInputsRisingEdge);

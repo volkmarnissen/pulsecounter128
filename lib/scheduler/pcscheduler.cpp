@@ -6,6 +6,7 @@
 #include <string.h>
 #include <chrono>
 #include <thread>
+#include <array>
 #include "pclog.hpp"
 #define TAG "pcscheduler"
 static CountersStorage countersStorage[128];
@@ -61,27 +62,47 @@ void PulseCounterScheduler::storePulseCounts(time_t date) const
     // reset Pulsecounter
     Pulsecounter::reset();
 };
+int cmpByDate(CountersStorage *a, CountersStorage *b)
+{
+    if (a->datetime == b->datetime)
+        if (a->outputPort == b->outputPort)
+            return a->counts[0] > b->counts[0];
+        else
+            return a->outputPort > b->outputPort;
+    else
+        return a->datetime > b->datetime;
+}
 
 std::string PulseCounterScheduler::generatePayload() const
 {
     std::string payload = "";
-    for (auto it = begin(config.getCounters()); it != end(config.getCounters()); ++it)
+    qsort(countersStorage, counterStorageCount, sizeof(countersStorage[0]), (__compar_fn_t)&cmpByDate);
+    std::time_t date = 0;
+
+    for (int a = 0; a < counterStorageCount; a++)
     {
-        for (int a = 0; a < counterStorageCount; a++)
+        if (date != countersStorage[a].datetime)
+        {
+            date = countersStorage[a].datetime;
+            if (a > 0)
+                payload += "},\n";
+            payload += "{\"date\": " + std::to_string(date);
+        };
+
+        for (auto it = begin(config.getCounters()); it != end(config.getCounters()); ++it)
+        {
             if (countersStorage[a].outputPort == it->getOutputPort())
             {
                 char buf[256];
-                sprintf(buf, "{\"name\":\"%s\"\n\"date\":%ld\n\"value\":%g\n}\n",
+                sprintf(buf, ",\n\"%s\":%g",
                         it->getMqttName(),
-                        (long)countersStorage[a].datetime,
                         ((double)countersStorage[a].counts[it->getInputPort()]) / it->getDivider());
-                if (payload.length() > 0)
-                    payload += ",";
                 payload += buf;
             }
+        }
     }
     counterStorageCount = 0;
-    return "[" + payload + "]";
+    return "[" + payload + "}]";
 };
 
 class PCMqttClient : public MqttClient

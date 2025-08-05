@@ -13,16 +13,20 @@ static const char *TAG = "pulsecounter";
 // 20ms wait time before reading inputs again
 // Will be lowered in unit tests
 static u_int16_t waitTimeInMillis = 20;
+#ifdef NATIVE
+#define STATIC_ESP32
+#else
+#define STATIC_ESP32 static
+#endif
 
 // ULP data =============
-static bool inputsHaveRisingEdges;
-static OutputData outputData[8];
-static NoOutputData noOutputData;
+STATIC_ESP32 OutputData outputData[8];
+STATIC_ESP32 NoOutputData noOutputData;
 static bool resetRequest = false;
 
 // local static data =====================
-static PulseCounterType pulseCounters[maxPulseCounters];
-static int pulseCounterCount;
+STATIC_ESP32 PulseCounterType pulseCounters[maxPulseCounters];
+STATIC_ESP32 int pulseCounterCount;
 
 static std::thread *readInputThread = NULL;
 static bool runReadInputThread = false;
@@ -89,7 +93,7 @@ bool readInputsRisingEdgeOutputs()
          pulseCounters[a].counter = 0;
       resetRequest = false;
    }
-   inputsHaveRisingEdges = false;
+   bool inputsHaveRisingEdges = false;
    bool atLeastOneOutput = false;
    for (int pc = 0; pc < pulseCounterCount && !atLeastOneOutput; pc++)
       if (pulseCounters[pc].numOutPort != 0xFF)
@@ -125,6 +129,8 @@ bool readInputsRisingEdgeOutputs()
 }
 bool readInputsRisingEdgeNoOutputs()
 {
+   bool inputsHaveRisingEdges = false;
+
    noOutputData.previousInputMask = noOutputData.currentInputMask;
    noOutputData.currentInputMask = I2c::get()->readInputPorts();
    imask_t inputMask = noOutputData.currentInputMask & (~noOutputData.previousInputMask);
@@ -135,10 +141,9 @@ bool readInputsRisingEdgeNoOutputs()
 
 bool Pulsecounter::readInputsRisingEdge()
 {
-   inputsHaveRisingEdges = false;
-   readInputsRisingEdgeOutputs();
-   readInputsRisingEdgeNoOutputs();
-   return inputsHaveRisingEdges;
+   bool inptHaveRigingO = readInputsRisingEdgeOutputs();
+   bool inptHaveRigingNoO = readInputsRisingEdgeNoOutputs();
+   return inptHaveRigingO || inptHaveRigingNoO;
 }
 
 void Pulsecounter::readPorts(OutputConfigurationType type)
@@ -212,13 +217,33 @@ void Pulsecounter::setPulseCounter(uint8_t outputPort, uint8_t inputPort)
 
 void Pulsecounter::countPulses()
 {
-   ESP_LOGI(TAG, "countPulses 0x%2x 0x%2x\n", noOutputData.currentInputMask, noOutputData.previousInputMask);
+   char header[255] = "I ";
+   char header2[255] = "O ";
+   char buf[255] = "C ";
+   int inputPort = -1;
+   int inputIdx = -1;
+   imask_t imaskc = noOutputData.currentInputMask;
+   imask_t imaskp = noOutputData.previousInputMask;
+   static int lineCounter = 0;
    for (int a = 0; a < pulseCounterCount; a++)
    {
       PulseCounterType &pc = pulseCounters[a];
       if (Pulsecounter::inputHasRisingEdge(pc))
+      {
+         inputPort = pc.numInputPort;
+         inputIdx = a;
          pc.counter++;
+      }
+      sprintf(header + strlen(header), "%3d ", (int)pc.numInputPort);
+      sprintf(header2 + strlen(header2), "%3d ", (int)pc.numOutPort);
+      sprintf(buf + strlen(buf), "%3d ", (int)pc.counter);
    }
+   if (lineCounter++ % 10 == 0)
+   {
+      ESP_LOGI(TAG, "%s", header);
+      ESP_LOGI(TAG, "%s", header2);
+   }
+   ESP_LOGI(TAG, "%s %d/%d %4x %4x", buf, inputPort, inputIdx, imaskp, imaskc);
 }
 
 void Pulsecounter::reset()
@@ -232,7 +257,7 @@ uint32_t Pulsecounter::getCounts(uint8_t outputPort, uint8_t inputPort)
    for (int a = 0; a < pulseCounterCount; a++)
       if (pulseCounters[a].numInputPort == inputPort && pulseCounters[a].numOutPort == outputPort)
       {
-         ESP_LOGI(TAG, "getCounts %d %lu\n", inputPort, (unsigned long)pulseCounters[a].counter);
+         // ESP_LOGI(TAG, "getCounts %d %lu\n", inputPort, (unsigned long)pulseCounters[a].counter);
          return pulseCounters[a].counter;
       }
 

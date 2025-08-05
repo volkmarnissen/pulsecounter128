@@ -62,30 +62,7 @@ void pcscheduler_storeCounts()
     TEST_ASSERT_EQUAL_INT32(7200, pcs[2].counts[5]);
     TEST_ASSERT_EQUAL_INT32(8000, pcs[5].counts[5]);
     std::string pyl = pc.generatePayload();
-    std::string expected = "[{\"name\":\"testNoOutput\"\n\
-\"date\":1566508946\n\
-\"value\":0\n\
-}\n\
-,{\"name\":\"testNoOutput\"\n\
-\"date\":1566508947\n\"value\":0\n\
-}\n,\
-{\"name\":\"test1\"\n\
-\"date\":1566508946\n\
-\"value\":3.6036\n\
-}\n\
-,{\"name\":\"test1\"\n\
-\"date\":1566508947\n\
-\"value\":3.6036\n\
-}\n\
-,{\"name\":\"test45\"\n\
-\"date\":1566508946\n\
-\"value\":8.10811\n\
-}\n\
-,{\"name\":\"test45\"\n\
-\"date\":1566508947\n\
-\"value\":9.00901\n\
-}\n\
-]";
+    std::string expected = "[{\"date\": 1566508946,\n\"test1\":3.6036,\n\"test45\":8.10811,\n\"testNoOutput\":0},\n{\"date\": 1566508947,\n\"test1\":3.6036,\n\"test45\":9.00901,\n\"testNoOutput\":0}]";
     TEST_ASSERT_EQUAL_STRING(expected.c_str(), pyl.c_str());
 };
 void pcscheduler_tests()
