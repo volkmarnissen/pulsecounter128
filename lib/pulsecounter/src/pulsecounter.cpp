@@ -217,7 +217,7 @@ void Pulsecounter::setPulseCounter(uint8_t outputPort, uint8_t inputPort)
       pulseCounters[found].counter = 0;
 }
 
-void Pulsecounter::countPulses()
+void Pulsecounter::countPulses(time_t now)
 {
    char header[255] = "I ";
    char header2[255] = "O ";
@@ -234,6 +234,7 @@ void Pulsecounter::countPulses()
       {
          inputPort = pc.numInputPort;
          inputIdx = a;
+         pc.lastSecond = now;
          pc.counter++;
       }
       sprintf(header + strlen(header), "%3d ", (int)pc.numInputPort);
@@ -259,15 +260,14 @@ void Pulsecounter::reset()
 std::string Pulsecounter::getStatusJson()
 {
    std::string rc = "[";
-   time_t now = time(NULL);
    char buf[128];
    bool cutComma = false;
    for (int a = 0; a < pulseCounterCount; a++)
       if (pulseCounters[a].numInputPort != noInputPort)
       {
-         sprintf(buf, "{ \"input\": %d, \"output\":%d, \"last\": %d, \"secondsAgo\": %ld },",
+         sprintf(buf, "{ \"input\": %d, \"output\":%d, \"last\": %d, \"lastSecond\": %ld },",
                  (int)pulseCounters[a].numInputPort, (int)pulseCounters[a].numOutPort, (int)pulseCounters[a].counter,
-                 now - pulseCounters[a].lastSecond);
+                 (long)pulseCounters[a].lastSecond);
          rc += buf;
          cutComma = true;
       }
@@ -351,6 +351,7 @@ void Pulsecounter::init()
       pulseCounters[a].numOutPort = a;
       pulseCounters[a].numInputPort = 0xFF;
       pulseCounters[a].counter = 0;
+      pulseCounters[a].lastSecond = 0;
    }
 
 #ifndef NATIVE

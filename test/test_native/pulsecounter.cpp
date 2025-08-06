@@ -2,6 +2,7 @@
 #include <pulsecounter.hpp>
 #include <hardware.hpp>
 #include "native.hpp"
+#include <cstring>
 
 using namespace Pulsecounter;
 
@@ -201,22 +202,32 @@ void testCountPulses(imask_t imaskp, imask_t imaskc, int expPcNum, const char *e
         pulseCounters[idx].numOutPort = 0xFF;
         pulseCounters[idx].numInputPort = idx;
         pulseCounters[idx].counter = 0;
-        pulseCounters[idx].lastSecond = time(NULL) - 2;
+        pulseCounters[idx].lastSecond = 1234;
     }
-    Pulsecounter::countPulses();
+    Pulsecounter::countPulses(2222);
     TEST_ASSERT_EQUAL_INT32_MESSAGE(1, pulseCounters[expPcNum].counter, msg);
-    TEST_ASSERT_EQUAL_STRING_MESSAGE(expJson, Pulsecounter::getStatusJson().c_str(), msg);
+    std::string ss = Pulsecounter::getStatusJson();
+    const char *isStr = ss.c_str();
+    int cmp = strlen(isStr);
+    int exp = strlen(expJson);
+    for (int idx = 0; idx < exp; idx++)
+    {
+        if (isStr[idx] != expJson[idx])
+            printf("%d\n", idx);
+    }
+    cmp = strcmp(isStr, expJson);
+    TEST_ASSERT_EQUAL_STRING_MESSAGE(expJson, isStr, msg);
 }
 void pulsecounter_countPulses()
 {
-    char expJson[] = "[{ \"input\": 0, \"output\":255, \"last\": 0 \"secondsAgo\": 2 },\
-{ \"input\": 1, \"output\":255, \"last\": 0, \"secondsAgo\": 2 },\
-{ \"input\": 2, \"output\":255, \"last\": 0, \"secondsAgo\": 2 },\
-{ \"input\": 3, \"output\":255, \"last\": 0, \"secondsAgo\": 2 },\
-{ \"input\": 4, \"output\":255, \"last\": 0, \"secondsAgo\": 2 },\
-{ \"input\": 5, \"output\":255, \"last\": 0, \"secondsAgo\": 2 },\
-{ \"input\": 6, \"output\":255, \"last\": 0, \"secondsAgo\": 2 },\
-{ \"input\": 7, \"output\":255, \"last\": 1, \"secondsAgo\": 2 }]";
+    char expJson[] = "[{ \"input\": 0, \"output\":255, \"last\": 0, \"lastSecond\": 1234 },\
+{ \"input\": 1, \"output\":255, \"last\": 0, \"lastSecond\": 1234 },\
+{ \"input\": 2, \"output\":255, \"last\": 0, \"lastSecond\": 1234 },\
+{ \"input\": 3, \"output\":255, \"last\": 0, \"lastSecond\": 1234 },\
+{ \"input\": 4, \"output\":255, \"last\": 0, \"lastSecond\": 1234 },\
+{ \"input\": 5, \"output\":255, \"last\": 0, \"lastSecond\": 1234 },\
+{ \"input\": 6, \"output\":255, \"last\": 0, \"lastSecond\": 1234 },\
+{ \"input\": 7, \"output\":255, \"last\": 1, \"lastSecond\": 2222 }]";
 
     testCountPulses(0xff3f, 0xffbf, 7, expJson, "0xff3f, 0xffbf");
     testCountPulses(0xff7f, 0xffff, 7, expJson, "0xff7f, 0xffff");

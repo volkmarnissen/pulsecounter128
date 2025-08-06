@@ -40,7 +40,7 @@ namespace Pulsecounter
   extern void startThread();
   extern bool readInputsRisingEdge();
   extern void setPulseCounter(uint8_t outputPort, uint8_t inputPort);
-  extern void countPulses();
+  extern void countPulses(time_t now = time(NULL));
   extern uint32_t getCounts(uint8_t outputPort, uint8_t inputPort);
   extern void reset();
   extern std::string getStatusJson();
