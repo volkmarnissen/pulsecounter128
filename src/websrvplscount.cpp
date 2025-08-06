@@ -50,6 +50,11 @@ static esp_err_t getHandler(httpd_req_t *r)
         httpd_resp_set_type(r, "application/json");
         httpd_resp_send(r, Pulsecounter::getStatusJson().c_str(), HTTPD_RESP_USE_STRLEN);
     }
+    else if (std::string(r->uri).ends_with("api/resetTicks"))
+    {
+        httpd_resp_set_type(r, "application/json");
+        httpd_resp_send(r, Pulsecounter::resetLastSeconds().c_str(), HTTPD_RESP_USE_STRLEN);
+    }
     else
     {
         httpd_resp_set_type(r, "text/html");

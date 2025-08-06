@@ -9,6 +9,7 @@
     </head>
    <body>
         <form id="form">
+            <div>
             <div class="flexcolumn">
                 <div class="category">
                     <div class="categoryHeader">
@@ -126,6 +127,10 @@
                                         <input type="text" id="logdestination" name="logdestination" placeholder="myserver.lan:3333" >
                                         <span class="tooltiptext">UDP logging destination server and port.</span>
                                     </div>
+                                    <div class="tooltip">
+                                        <button id="resetTicks" type="button" class="uploadButton">Reset Last Ticks</button>
+                                    </div>
+                                    </div>
                                 </div>
                             </div>                        
                         </div>
@@ -144,8 +149,10 @@
 
                 </div>
             </div>
+        </div>            
             <button type="submit" class="submitButton" >Save Changes</button>
             <a href='#' onclick="downloadConfiguration()">Download Configuration(plscount.json)</a>
+
         </form>
                 <div id="inputTemplate" class="input">
                     <div class="inputLabel">

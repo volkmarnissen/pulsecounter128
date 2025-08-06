@@ -34,6 +34,7 @@ namespace Pulsecounter
   extern void readPorts(OutputConfigurationType type);
   extern void setOutputConfiguration(const OutputConfig &output, const Config &config);
   extern void init();
+  extern void initOutputData();
   extern void setConfig(const Config &cfg);
   extern void joinThread();
   extern void stopThread();
@@ -44,6 +45,7 @@ namespace Pulsecounter
   extern uint32_t getCounts(uint8_t outputPort, uint8_t inputPort);
   extern void reset();
   extern std::string getStatusJson();
+  extern std::string resetLastSeconds();
 #ifdef NATIVE
   extern OutputData *getOutputData();
   extern NoOutputData *getNoOutputData();

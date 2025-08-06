@@ -73,6 +73,12 @@ void Pulsecounter::setConfig(const Config &cfg)
 #ifndef NATIVE
    ESP_LOGI(TAG, "Set Outputmask from 0x%02x to 0x%02x %s", (unsigned)initialOutputMask, (unsigned)outputMask, rc ? "Successfully" : "Error!");
 #endif
+   Pulsecounter::countPulses();
+   for (int a = 0; a < pulseCounterCount; a++)
+   {
+      pulseCounters[a].counter = 0;
+      pulseCounters[a].lastSecond = 0;
+   }
 
    // Clear EMeter outputPorts
    I2c::get()->writeOutputs(outputMask);
@@ -247,7 +253,7 @@ void Pulsecounter::countPulses(time_t now)
       ESP_LOGI(TAG, "%s", header2);
    }
    if (inputIdx == -1)
-      ESP_LOGI(TAG, "%s No Pulsecounter configured for %4x %4x", buf, imaskp, imaskc);
+      ESP_LOGI(TAG, "%s no rising edge found %4x %4x", buf, imaskp, imaskc);
    else
       ESP_LOGI(TAG, "%s %d/%d %4x %4x", buf, inputPort, inputIdx, imaskp, imaskc);
 }
@@ -256,7 +262,12 @@ void Pulsecounter::reset()
 {
    resetRequest = true;
 }
-
+std::string Pulsecounter::resetLastSeconds()
+{
+   for (int a = 0; a < pulseCounterCount; a++)
+      pulseCounters[a].lastSecond = 0;
+   return "{ \"resetTicks\": true }";
+}
 std::string Pulsecounter::getStatusJson()
 {
    std::string rc = "[";
@@ -333,18 +344,23 @@ extern NoOutputData *Pulsecounter::getNoOutputData()
 #include <esp_pthread.h>
 #endif
 
-void Pulsecounter::init()
+void Pulsecounter::initOutputData()
 {
    int numOutputs = sizeof(outputData) / sizeof(outputData[0]);
    for (int a = 0; a < numOutputs; a++)
    {
       outputData[a].maxCount = 0;
       outputData[a].currentCount = 0;
-      outputData[a].previousInputMask = 0;
-      outputData[a].currentInputMask = 0;
+      outputData[a].previousInputMask = 0xffff;
+      outputData[a].currentInputMask = 0xffff;
    }
-   noOutputData.previousInputMask = 0;
-   noOutputData.currentInputMask = 0;
+   noOutputData.previousInputMask = I2c::get()->readInputPorts();
+   noOutputData.currentInputMask = noOutputData.previousInputMask;
+}
+
+void Pulsecounter::init()
+{
+   Pulsecounter::initOutputData();
    pulseCounterCount = 0;
    for (int a = 0; a < sizeof(pulseCounters) / sizeof(pulseCounters[0]); a++)
    {

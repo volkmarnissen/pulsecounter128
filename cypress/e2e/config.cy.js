@@ -29,6 +29,9 @@ describe('template spec', () => {
     cy.intercept("GET", "**/status", {
       fixture: "status.json",
     });
+    cy.intercept("GET", "**/resetTicks", {
+      fixture: "status.json",
+    });
     cy.intercept('POST','**/config', (req) => {
       validateJson(req.body)
       req.reply({
