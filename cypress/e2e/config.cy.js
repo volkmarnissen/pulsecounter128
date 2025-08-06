@@ -26,6 +26,9 @@ describe('template spec', () => {
     cy.intercept("GET", "**/config", {
       fixture: "config.json",
     });
+    cy.intercept("GET", "**/status", {
+      fixture: "status.json",
+    });
     cy.intercept('POST','**/config', (req) => {
       validateJson(req.body)
       req.reply({
@@ -41,8 +44,8 @@ describe('template spec', () => {
   it('Basic functionality', () => {
     // wait for loading from server
     validateJson = function(json){
-      expect(json.counters.length).to.equal(3)
-      expect(json.counters[1].divider).to.equal(888777)
+      expect(json.counters.length).to.equal(18)
+      expect(json.counters[16].divider).to.equal(888777)
     }
     cy.get("button[id='out_0']").click().get('input[name="divider_0_0"').type("777").then(()=>{
         cy.get('input[name="hour"').should('have.value', "23");

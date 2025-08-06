@@ -8,6 +8,7 @@
 #include <chrono>
 #include <thread>
 #include "websrvplscount.hpp"
+#include "pulsecounter.hpp"
 #include "config.hpp"
 #include "mqtt.hpp"
 
@@ -43,6 +44,11 @@ static esp_err_t getHandler(httpd_req_t *r)
     {
         httpd_resp_set_type(r, "application/json");
         httpd_resp_send(r, Config::getJson().c_str(), HTTPD_RESP_USE_STRLEN);
+    }
+    else if (std::string(r->uri).ends_with("api/status"))
+    {
+        httpd_resp_set_type(r, "application/json");
+        httpd_resp_send(r, Pulsecounter::getStatusJson().c_str(), HTTPD_RESP_USE_STRLEN);
     }
     else
     {
@@ -156,7 +162,8 @@ httpd_uri_t WebserverPulsecounter::uriHandlers[] = {
     {.uri = "/api/update",
      .method = HTTP_POST,
      .handler = postUpdateHandler,
-     .user_ctx = NULL}};
+     .user_ctx = NULL},
+};
 int WebserverPulsecounter::uriHandlersCount = sizeof(uriHandlers) / sizeof(uriHandlers[0]);
 
 void WebserverPulsecounter::setConfig(const NetworkConfig &config, bool useHttp)

@@ -27,7 +27,6 @@ static bool resetRequest = false;
 // local static data =====================
 STATIC_ESP32 PulseCounterType pulseCounters[maxPulseCounters];
 STATIC_ESP32 int pulseCounterCount;
-
 static std::thread *readInputThread = NULL;
 static bool runReadInputThread = false;
 
@@ -91,6 +90,7 @@ bool readInputsRisingEdgeOutputs()
    {
       for (int a = 0; a < sizeof(pulseCounters) / sizeof(pulseCounters[0]); a++)
          pulseCounters[a].counter = 0;
+
       resetRequest = false;
    }
    bool inputsHaveRisingEdges = false;
@@ -209,6 +209,8 @@ void Pulsecounter::setPulseCounter(uint8_t outputPort, uint8_t inputPort)
    {
       pulseCounters[pulseCounterCount].numInputPort = inputPort;
       pulseCounters[pulseCounterCount].numOutPort = outputPort;
+      time_t now = time(NULL);
+      pulseCounters[pulseCounterCount].lastSecond = now;
       found = pulseCounterCount++;
    }
    if (found >= 0)
@@ -243,7 +245,10 @@ void Pulsecounter::countPulses()
       ESP_LOGI(TAG, "%s", header);
       ESP_LOGI(TAG, "%s", header2);
    }
-   ESP_LOGI(TAG, "%s %d/%d %4x %4x", buf, inputPort, inputIdx, imaskp, imaskc);
+   if (inputIdx == -1)
+      ESP_LOGI(TAG, "%s No Pulsecounter configured for %4x %4x", buf, imaskp, imaskc);
+   else
+      ESP_LOGI(TAG, "%s %d/%d %4x %4x", buf, inputPort, inputIdx, imaskp, imaskc);
 }
 
 void Pulsecounter::reset()
@@ -251,6 +256,26 @@ void Pulsecounter::reset()
    resetRequest = true;
 }
 
+std::string Pulsecounter::getStatusJson()
+{
+   std::string rc = "[";
+   time_t now = time(NULL);
+   char buf[128];
+   bool cutComma = false;
+   for (int a = 0; a < pulseCounterCount; a++)
+      if (pulseCounters[a].numInputPort != noInputPort)
+      {
+         sprintf(buf, "{ \"input\": %d, \"output\":%d, \"last\": %d, \"secondsAgo\": %ld },",
+                 (int)pulseCounters[a].numInputPort, (int)pulseCounters[a].numOutPort, (int)pulseCounters[a].counter,
+                 now - pulseCounters[a].lastSecond);
+         rc += buf;
+         cutComma = true;
+      }
+   if (cutComma)
+      rc = rc.substr(0, rc.length() - 1);
+   rc += "]";
+   return rc;
+}
 uint32_t Pulsecounter::getCounts(uint8_t outputPort, uint8_t inputPort)
 {
 

@@ -191,7 +191,7 @@ public:
     }
 };
 extern void readInputsRisingEdgeNoOutputs();
-void testCountPulses(imask_t imaskp, imask_t imaskc, int expPcNum, const char *msg)
+void testCountPulses(imask_t imaskp, imask_t imaskc, int expPcNum, const char *expJson, const char *msg)
 {
     noOutputData.currentInputMask = imaskc;
     noOutputData.previousInputMask = imaskp;
@@ -201,16 +201,26 @@ void testCountPulses(imask_t imaskp, imask_t imaskc, int expPcNum, const char *m
         pulseCounters[idx].numOutPort = 0xFF;
         pulseCounters[idx].numInputPort = idx;
         pulseCounters[idx].counter = 0;
+        pulseCounters[idx].lastSecond = time(NULL) - 2;
     }
     Pulsecounter::countPulses();
     TEST_ASSERT_EQUAL_INT32_MESSAGE(1, pulseCounters[expPcNum].counter, msg);
+    TEST_ASSERT_EQUAL_STRING_MESSAGE(expJson, Pulsecounter::getStatusJson().c_str(), msg);
 }
 void pulsecounter_countPulses()
 {
-    testCountPulses(0xff3f, 0xffbf, 7, "0xff3f, 0xffbf");
-    testCountPulses(0xff7f, 0xffff, 7, "0xff7f, 0xffff");
-}
+    char expJson[] = "[{ \"input\": 0, \"output\":255, \"last\": 0 \"secondsAgo\": 2 },\
+{ \"input\": 1, \"output\":255, \"last\": 0, \"secondsAgo\": 2 },\
+{ \"input\": 2, \"output\":255, \"last\": 0, \"secondsAgo\": 2 },\
+{ \"input\": 3, \"output\":255, \"last\": 0, \"secondsAgo\": 2 },\
+{ \"input\": 4, \"output\":255, \"last\": 0, \"secondsAgo\": 2 },\
+{ \"input\": 5, \"output\":255, \"last\": 0, \"secondsAgo\": 2 },\
+{ \"input\": 6, \"output\":255, \"last\": 0, \"secondsAgo\": 2 },\
+{ \"input\": 7, \"output\":255, \"last\": 1, \"secondsAgo\": 2 }]";
 
+    testCountPulses(0xff3f, 0xffbf, 7, expJson, "0xff3f, 0xffbf");
+    testCountPulses(0xff7f, 0xffff, 7, expJson, "0xff7f, 0xffff");
+}
 
 void pulsecounter_setOutputConfiguration()
 {

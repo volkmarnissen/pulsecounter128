@@ -8,6 +8,7 @@ typedef struct
   uint8_t numInputPort;
   uint8_t numOutPort;
   uint32_t counter;
+  long lastSecond; // unix second
 } PulseCounterType;
 struct OutputData
 {
@@ -42,6 +43,7 @@ namespace Pulsecounter
   extern void countPulses();
   extern uint32_t getCounts(uint8_t outputPort, uint8_t inputPort);
   extern void reset();
+  extern std::string getStatusJson();
 #ifdef NATIVE
   extern OutputData *getOutputData();
   extern NoOutputData *getNoOutputData();
