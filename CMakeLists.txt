@@ -1,8 +1,6 @@
 cmake_minimum_required(VERSION 3.16.0)
 include($ENV{IDF_PATH}/tools/cmake/project.cmake)
-list(APPEND EXTRA_COMPONENT_DIRS components/esp_idf_lib_helpers)
-list(APPEND EXTRA_COMPONENT_DIRS components/i2cdev)
-list(APPEND EXTRA_COMPONENT_DIRS components/pcf8574)
+#list(APPEND EXTRA_COMPONENT_DIRS components/esp_idf_lib_helpers)
 
 project(pulsecounter128)
 

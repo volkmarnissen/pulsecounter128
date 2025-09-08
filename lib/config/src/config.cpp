@@ -112,6 +112,10 @@ class ConfigLoad : public Config
 public:
     bool load(const char *buffer)
     {
+#ifdef NATIVE        
+        try
+#endif
+        {
         JsonDocument doc;
         DeserializationError error = deserializeJson(doc, buffer);
         if (error)
@@ -161,6 +165,14 @@ public:
             return false;
         };
         return true;
+                }
+#ifdef NATIVE        
+        catch (std::exception &e)
+        {
+            fprintf(stderr, "Exception: %s\n", e.what());
+            return false;
+        };
+#endif
     };
 };
 
