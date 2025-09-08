@@ -7,3 +7,5 @@ node_modules
 components
 test/certificates
 src/Hostnames
+sdkconfig.*
+!sdkconfig.defaults
