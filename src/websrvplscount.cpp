@@ -20,7 +20,7 @@ extern const char _binary_pulse_css_start[] asm("_binary_pulse_css_start");
 extern const char _binary_pulse_js_start[] asm("_binary_pulse_js_start");
 extern const char _binary_ota_js_start[] asm("_binary_ota_js_start");
 extern esp_err_t postUpdateHandler(httpd_req_t *req);
-extern void reconfigure();
+extern void reconfigurePcScheduler();
 
 static esp_err_t getHandler(httpd_req_t *r)
 {
