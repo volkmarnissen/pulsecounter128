@@ -13,7 +13,7 @@ extern std::string readFile(const char *filename);
 class TestMqttClient : public MqttClient
 {
 public:
-    TestMqttClient(const MqttConfig &config, const NetworkConfig &network) : MqttClient(config, network) {};
+    TestMqttClient(const MqttConfig &config, const NetworkConfig &network) : MqttClient() {};
     void subscribeAndPublish()
     {
         ESP_LOGI(TAG, "subscribeAndPublish");
@@ -68,7 +68,7 @@ void mqtt_openClose()
     ESP_LOGI(TAG, "config");
     TestMqttClient testClient(config, network);
     ESP_LOGI(TAG, "TestMQTTClient");
-    testClient.start();
+    testClient.start(config, network);
     ESP_LOGI(TAG, "start");
     testClient.stop();
 };
@@ -81,7 +81,7 @@ void mqtt_SSLopenClose()
     ESP_LOGI(TAG, "config");
     TestMqttClient testClient(config, network);
     ESP_LOGI(TAG, "TestMQTTClient");
-    testClient.start();
+    testClient.start(config, network);
     ESP_LOGI(TAG, "start");
     testClient.stop();
 };

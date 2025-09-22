@@ -112,61 +112,61 @@ class ConfigLoad : public Config
 public:
     bool load(const char *buffer)
     {
-#ifdef NATIVE        
+#ifdef NATIVE
         try
 #endif
         {
-        JsonDocument doc;
-        DeserializationError error = deserializeJson(doc, buffer);
-        if (error)
-        {
-            ESP_LOGE(TAG, "deserializeJson() failed: %s", error.c_str());
-            return false;
-        }
-        // json["numOfQues"] << "\n";
-        if (doc["counters"].is<JsonArray>())
-        {
-            JsonDocument countersArray = (doc["counters"]);
-            for (int i = 0; i < countersArray.size(); i++)
+            JsonDocument doc;
+            DeserializationError error = deserializeJson(doc, buffer);
+            if (error)
             {
-                counters.push_back(CounterConfigLoad(countersArray[i].as<JsonObject>()));
+                ESP_LOGE(TAG, "deserializeJson() failed: %s\n%s", error.c_str(), buffer);
+                return false;
             }
-        }
-        if (doc["outputs"].is<JsonArray>())
-        {
-            JsonDocument outputsArray = doc["outputs"];
-            for (int i = 0; i < outputsArray.size(); i++)
-                outputs.push_back(OutputConfigLoad(outputsArray[i].as<JsonObject>()));
-        }
-        // else
-        // {
-        //     ESP_LOGE(TAG, "No output ports specified in configuration");
-        //     return false;
-        // };
-        if (doc["network"].is<JsonObject>())
-            network = NetworkConfigLoad(doc["network"].as<JsonObject>());
-        else
-        {
-            ESP_LOGE(TAG, "No network configuration specified in configuration");
-            return false;
-        };
-        if (doc["mqtt"].is<JsonObject>())
-            mqtt = MqttConfigLoad(doc["mqtt"].as<JsonObject>());
-        else
-        {
-            ESP_LOGE(TAG, "No MQTT configuration specified in configuration");
-            return false;
-        };
-        if (doc["schedule"].is<JsonObject>())
-            schedule = ScheduleConfigLoad(doc["schedule"].as<JsonObject>());
-        else
-        {
-            ESP_LOGE(TAG, "No Schedule configuration specified in configuration");
-            return false;
-        };
-        return true;
+            // json["numOfQues"] << "\n";
+            if (doc["counters"].is<JsonArray>())
+            {
+                JsonDocument countersArray = (doc["counters"]);
+                for (int i = 0; i < countersArray.size(); i++)
+                {
+                    counters.push_back(CounterConfigLoad(countersArray[i].as<JsonObject>()));
                 }
-#ifdef NATIVE        
+            }
+            if (doc["outputs"].is<JsonArray>())
+            {
+                JsonDocument outputsArray = doc["outputs"];
+                for (int i = 0; i < outputsArray.size(); i++)
+                    outputs.push_back(OutputConfigLoad(outputsArray[i].as<JsonObject>()));
+            }
+            // else
+            // {
+            //     ESP_LOGE(TAG, "No output ports specified in configuration");
+            //     return false;
+            // };
+            if (doc["network"].is<JsonObject>())
+                network = NetworkConfigLoad(doc["network"].as<JsonObject>());
+            else
+            {
+                ESP_LOGE(TAG, "No network configuration specified in configuration");
+                return false;
+            };
+            if (doc["mqtt"].is<JsonObject>())
+                mqtt = MqttConfigLoad(doc["mqtt"].as<JsonObject>());
+            else
+            {
+                ESP_LOGE(TAG, "No MQTT configuration specified in configuration");
+                return false;
+            };
+            if (doc["schedule"].is<JsonObject>())
+                schedule = ScheduleConfigLoad(doc["schedule"].as<JsonObject>());
+            else
+            {
+                ESP_LOGE(TAG, "No Schedule configuration specified in configuration");
+                return false;
+            };
+            return true;
+        }
+#ifdef NATIVE
         catch (std::exception &e)
         {
             fprintf(stderr, "Exception: %s\n", e.what());

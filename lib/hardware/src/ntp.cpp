@@ -12,7 +12,7 @@ void NtpService::stop() {};
 #include "esp_netif_sntp.h"
 #include "esp_sntp.h"
 #include "esp_log.h"
-
+#include <arpa/inet.h>
 void time_sync_notification_cb(struct timeval *tv)
 {
     ESP_LOGI(TAG, "Notification of a time synchronization event");
@@ -65,21 +65,25 @@ void NtpService::restart()
     if (server == nullptr)
     {
         if (ip == nullptr)
+        {
             ESP_LOGE(TAG, "No ntp ip address found!");
+            return;
+        }
         else
+        {
             ESP_LOGI(TAG, "No server found!");
-        return;
+        }
     }
     switch (status)
     {
     case SNTP_SYNC_STATUS_RESET:
-        ESP_LOGI(TAG, "Status Reset %s", server);
+        ESP_LOGI(TAG, "Status Reset");
         break;
     case SNTP_SYNC_STATUS_COMPLETED:
-        ESP_LOGI(TAG, "Status Completed %s", server);
+        ESP_LOGI(TAG, "Status Completed");
         break;
     default:
-        ESP_LOGI(TAG, "??? %s", server);
+        ESP_LOGI(TAG, "???");
     };
 };
 

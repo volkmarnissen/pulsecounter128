@@ -45,6 +45,7 @@ namespace Pulsecounter
   extern uint32_t getCounts(uint8_t outputPort, uint8_t inputPort);
   extern void reset();
   extern void setErrors(std::string);
+  extern void setMqttStatus(std::string);
   extern std::string getStatusJson();
   extern std::string resetLastSeconds();
 #ifdef NATIVE
