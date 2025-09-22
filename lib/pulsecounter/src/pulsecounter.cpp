@@ -276,7 +276,7 @@ std::string Pulsecounter::getStatusJson()
       rc += (errors.length() > 0 ? "," : "") + mqttStatus;
    char buf[128];
    bool cutComma = false;
-   if (pulseCounterCount > 0)
+   if (mqttStatus.length() > 0 && pulseCounterCount > 0)
       rc += ",\n";
    for (int a = 0; a < pulseCounterCount; a++)
       if (pulseCounters[a].numInputPort != noInputPort)

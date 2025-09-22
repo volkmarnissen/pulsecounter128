@@ -3,6 +3,7 @@
 #include <hardware.hpp>
 #include "native.hpp"
 #include <cstring>
+#include <string>
 
 using namespace Pulsecounter;
 
@@ -96,6 +97,7 @@ void pulsecounter_simple()
     Pulsecounter::setOutputConfiguration(config.getOutputs()[0], config);
     Pulsecounter::setPulseCounter(0, 0);
     Pulsecounter::setPulseCounter(4, 5);
+    Pulsecounter::setMqttStatus("{\"lastPublished\": 1234567890 }");
     // MockI2C in hardware.hpp
     readInputCount = 0;
 
@@ -220,7 +222,7 @@ void testCountPulses(imask_t imaskp, imask_t imaskc, int expPcNum, const char *e
 }
 void pulsecounter_countPulses()
 {
-    char expJson[] = "[{ \"input\": 0, \"output\":255, \"last\": 0, \"lastSecond\": 1234 },\
+    char expJson[] = "[{\"lastPublished\": 1234567890 },\n{ \"input\": 0, \"output\":255, \"last\": 0, \"lastSecond\": 1234 },\
 { \"input\": 1, \"output\":255, \"last\": 0, \"lastSecond\": 1234 },\
 { \"input\": 2, \"output\":255, \"last\": 0, \"lastSecond\": 1234 },\
 { \"input\": 3, \"output\":255, \"last\": 0, \"lastSecond\": 1234 },\
@@ -228,9 +230,17 @@ void pulsecounter_countPulses()
 { \"input\": 5, \"output\":255, \"last\": 0, \"lastSecond\": 1234 },\
 { \"input\": 6, \"output\":255, \"last\": 0, \"lastSecond\": 1234 },\
 { \"input\": 7, \"output\":255, \"last\": 1, \"lastSecond\": 2222 }]";
+    Pulsecounter::setMqttStatus("{\"lastPublished\": 1234567890 }");
 
     testCountPulses(0xff3f, 0xffbf, 7, expJson, "0xff3f, 0xffbf");
     testCountPulses(0xff7f, 0xffff, 7, expJson, "0xff7f, 0xffff");
+}
+
+void pulsecounter_getStatusJson()
+{
+    Pulsecounter::setErrors("");
+    Pulsecounter::setMqttStatus("{\"lastPublised\": 123456789}");
+    std::string rc = Pulsecounter::getStatusJson();
 }
 
 void pulsecounter_setOutputConfiguration()
@@ -260,4 +270,5 @@ void pulsecounter_tests()
     RUN_TEST(pulsecounter_simple);
     RUN_TEST(pulsecounter_inputOnly);
     RUN_TEST(pulsecounter_readInputsRisingEdge);
+    RUN_TEST(pulsecounter_getStatusJson);
 }
