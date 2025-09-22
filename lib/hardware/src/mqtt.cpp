@@ -156,7 +156,7 @@ void MqttClient::eventHandler(void *handler_args, esp_event_base_t base, int32_t
         break;
     case MQTT_EVENT_ERROR:
         ESP_LOG_EVENT(TAG, "MQTT_EVENT_ERROR \"%s\"", mqttClient->getClientId());
-        switch (event->error_handle->error_type)
+       switch (event->error_handle->error_type)
         {
         case MQTT_ERROR_TYPE_TCP_TRANSPORT:
             mqttClient->logerror("reported from esp-tls", event->error_handle->esp_tls_last_esp_err);

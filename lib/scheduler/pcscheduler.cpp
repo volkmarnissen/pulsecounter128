@@ -9,9 +9,16 @@
 #include <array>
 #include "pclog.hpp"
 #define TAG "pcscheduler"
+#define MAX_ERRORS 10
 static CountersStorage countersStorage[128];
 static uint8_t counterStorageCount = 0;
-
+static struct {
+    const char *errors;
+    time_t from;
+    time_t to;
+    int count;
+} mqttErrors[MAX_ERRORS];
+int mqttErrorsCount=0;
 PCMqttClient *PulseCounterScheduler::mqttClient = nullptr;
 
 PulseCounterScheduler::PulseCounterScheduler(Config &_config) : Scheduler(const_cast<CONST_CONFIG ScheduleConfig &>(_config.getSchedule())), config(_config) {
@@ -120,11 +127,49 @@ protected:
     {
         ((PCMqttClient *)client)->scheduler.reset();
     };
-    static void onConnected(MqttClient *client, const char *, const char *)
+    static void onConnected(MqttClient *client, const char *topic, const char *payload)
     {
         client->publish(((PCMqttClient *)client)->topic.c_str(), ((PCMqttClient *)client)->payload.c_str());
     };
-
+    static void updateMqttErrors(const char* msg){
+        int i=0;
+        for(;i < mqttErrorsCount && strcmp(msg, mqttErrors[i].errors);i++);
+        if( i < mqttErrorsCount ){
+            time ( &mqttErrors[i].to );
+            mqttErrors[i].count++;
+        }else{
+            if( mqttErrorsCount>= MAX_ERRORS){
+                memcpy( mqttErrors +1, mqttErrors, sizeof(mqttErrors[0]) * (MAX_ERRORS-1)); 
+                mqttErrorsCount = MAX_ERRORS-1;
+            }  
+            mqttErrors[mqttErrorsCount].errors = msg;
+            mqttErrors[mqttErrorsCount].count = 1;
+            time ( &mqttErrors[mqttErrorsCount].to );
+            mqttErrors[mqttErrorsCount].from = mqttErrors[mqttErrorsCount].to;
+            mqttErrorsCount++;
+        }
+    }
+    static void onError(MqttClient *client, const char *message,const char *errorType)
+    {
+        // MQTT error
+        // store in message array
+        //  client->publish(((PCMqttClient *)client)->topic.c_str(), errorType);
+        updateMqttErrors(message);
+        char buf[256];
+        std::string rc = "";
+        for(int i=0; i < mqttErrorsCount;i++){
+            sprintf( buf, "{\"errors\": \"%s\", \"from\": %lld, \"to\": %lld, \"count\": %d }", 
+                mqttErrors[mqttErrorsCount].errors,
+                mqttErrors[mqttErrorsCount].from,
+                mqttErrors[mqttErrorsCount].to,
+                mqttErrors[mqttErrorsCount].count);
+            rc += buf;
+            if( i < mqttErrorsCount)
+                rc += ",\n";
+        }
+        Pulsecounter::setErrors(rc);
+        ((PCMqttClient *)client)->scheduler.reset();
+    };
 public:
     PCMqttClient(const Config &_config, PulseCounterScheduler &_scheduler, const std::string &_payload) : MqttClient(), scheduler(_scheduler), config(_config), topic(config.getMqtt().getTopic()), payload(_payload)
     {
@@ -134,6 +179,7 @@ public:
     {
         registerListener(MQTT_EV_PUBLISHED, PCMqttClient::onPublished);
         registerListener(MQTT_EV_CONNECTED, PCMqttClient::onConnected);
+        registerListener(MQTT_EV_ERROR, PCMqttClient::onError);
         return MqttClient::start(config.getMqtt(), config.getNetwork());
     }
 };

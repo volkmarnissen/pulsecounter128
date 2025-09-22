@@ -6,5 +6,7 @@
   { "input": 4, "output": 255, "last": 0, "lastSecond": 0 },
   { "input": 5, "output": 255, "last": 0, "lastSecond": 0 },
   { "input": 6, "output": 255, "last": 0, "lastSecond": 0 },
-  { "input": 7, "output": 255, "last": 1, "lastSecond": 2 }
+  { "input": 7, "output": 255, "last": 1, "lastSecond": 2 },
+  { "error": "Error Message", "from": 1758509296, "to": 1758523696, "count": 12},
+  { "error": "Error Message 2", "from": 1758510296, "to": 1758545696, "count": 8}
 ]

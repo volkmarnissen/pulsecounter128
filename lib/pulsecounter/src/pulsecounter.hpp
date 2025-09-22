@@ -44,6 +44,7 @@ namespace Pulsecounter
   extern void countPulses(time_t now = time(NULL));
   extern uint32_t getCounts(uint8_t outputPort, uint8_t inputPort);
   extern void reset();
+  extern void setErrors(std::string);
   extern std::string getStatusJson();
   extern std::string resetLastSeconds();
 #ifdef NATIVE

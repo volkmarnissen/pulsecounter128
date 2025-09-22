@@ -18,7 +18,7 @@ static u_int16_t waitTimeInMillis = 20;
 #else
 #define STATIC_ESP32 static
 #endif
-
+static std::string errors;
 // ULP data =============
 STATIC_ESP32 OutputData outputData[8];
 STATIC_ESP32 NoOutputData noOutputData;
@@ -270,9 +270,11 @@ std::string Pulsecounter::resetLastSeconds()
 }
 std::string Pulsecounter::getStatusJson()
 {
-   std::string rc = "[";
+   std::string rc = "[" + errors;
    char buf[128];
    bool cutComma = false;
+   if(pulseCounterCount > 0)
+      rc += ",\n";
    for (int a = 0; a < pulseCounterCount; a++)
       if (pulseCounters[a].numInputPort != noInputPort)
       {
@@ -286,6 +288,9 @@ std::string Pulsecounter::getStatusJson()
       rc = rc.substr(0, rc.length() - 1);
    rc += "]";
    return rc;
+}
+void Pulsecounter::setErrors(std::string _errors){
+   errors = _errors;
 }
 uint32_t Pulsecounter::getCounts(uint8_t outputPort, uint8_t inputPort)
 {
