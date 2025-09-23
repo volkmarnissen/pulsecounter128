@@ -6,6 +6,9 @@
 #include <ctime>
 #include <cmath>
 #include <thread>
+#include <iostream>
+#include <iomanip>
+#include <ctime>
 #include "pclog.hpp"
 #define TAG "schedulertest"
 class TestScheduler : public Scheduler
@@ -62,6 +65,44 @@ static void testGetMilliSecondsToNextRun(std::tm expectedTimeTm, int expectedTim
     TEST_ASSERT_EQUAL_INT32_MESSAGE(expectedTimeTm.tm_sec, rctime.tm_sec, "Seconds are different");
     TEST_ASSERT_TRUE_MESSAGE(abs(expectedTimeMs - millis) < 10, "Milliseconds are different(tolerance for processing time)");
     TEST_ASSERT_EQUAL_INT32_MESSAGE(expectedTime, testTimeT, "Something else is different");
+};
+class ScheduleEvery15minConfig : public ScheduleConfig
+{
+public:
+    ScheduleEvery15minConfig() : ScheduleConfig()
+    {
+        for (int h = 0; h < 23; h++)
+            this->hour.push_back(h);
+        for (int m = 0; m < 59; m += 15)
+            this->minute.push_back(m);
+        for (int s = 0; s < 59; s++)
+            this->second.push_back(s);
+    }
+};
+static void scheduler_getMilliSecondsToNextRun_nonNegative()
+{
+    ScheduleEvery15minConfig schedule;
+    const int secPerDay = 60 * 60 * 24;
+    const int minPerDay = 60 * 24;
+    for (int s = 0; s < secPerDay; s++)
+    {
+        std::tm testTimeTm;
+        testTimeTm.tm_hour = s / 60 / 60;
+        testTimeTm.tm_min = s / 60;
+        testTimeTm.tm_sec = s % minPerDay;
+        testTimeTm.tm_mday = 7;
+        testTimeTm.tm_mon = 7;
+        testTimeTm.tm_year = 2021 - 1900;
+        int testTimeMs = 0;
+        struct timeval testTime;
+        testTime.tv_sec = std::mktime(&testTimeTm);
+        testTime.tv_usec = testTimeMs * 1000; // 100ms
+        TestScheduler sch(schedule);
+        int rc = sch.getMilliSecondsToNextRun(testTime);
+        char buf[512];
+        sprintf(buf, "Negative Milliseconds %d", testTime.tv_sec);
+        TEST_ASSERT_TRUE_MESSAGE(rc >= 0, buf);
+    }
 }
 
 void scheduler_getMilliSecondsToNextRun()
@@ -203,6 +244,7 @@ void scheduler_tests()
     RUN_TEST(scheduler_getMilliSecondsToNextRun_NextMonth);
     RUN_TEST(scheduler_getMilliSecondsToNextRun_afterLastSecond);
     RUN_TEST(scheduler_getMilliSecondsToNextRun_positive);
+    RUN_TEST(scheduler_getMilliSecondsToNextRun_nonNegative);
     RUN_TEST(scheduler_getMaxWaitTimeOneDay);
     RUN_TEST(scheduler_getMaxWaitTimeOneHour);
     RUN_TEST(scheduler_getMaxWaitTimeOneMinue);

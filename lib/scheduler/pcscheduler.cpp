@@ -126,7 +126,11 @@ protected:
     static void onPublished(MqttClient *client, const char *topic, const char *payload)
     {
         char buf[512];
+#ifdef NATIVE
+        sprintf(buf, "{ \"lastPublished\": %ld }", time(NULL) * 1000);
+#else
         sprintf(buf, "{ \"lastPublished\": %lld }", time(NULL) * 1000);
+#endif
         Pulsecounter::setMqttStatus(buf);
         Pulsecounter::setErrors(getErrorsString());
         mqttErrorsCount = 0;

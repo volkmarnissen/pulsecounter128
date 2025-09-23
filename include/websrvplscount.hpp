@@ -11,7 +11,7 @@ class WebserverPulsecounter
     static int uriHandlersCount;
 
 public:
-    WebserverPulsecounter() : server(uriHandlers, uriHandlersCount) {};
+    WebserverPulsecounter() : server(uriHandlers, uriHandlersCount, this) {};
     virtual ~WebserverPulsecounter();
     void startValidationMqttClient(httpd_req_t *_req, const char *_content, const MqttConfig &config, const NetworkConfig &network);
     bool reconfigureRequest;

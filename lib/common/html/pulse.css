@@ -76,6 +76,10 @@ input{
     min-height: 20pt;
     width: 200pt;
 }
+.restartButton{
+    min-height: 20pt;
+    width: 150pt;
+}
 
 .uploadFile{
     width: 300pt;

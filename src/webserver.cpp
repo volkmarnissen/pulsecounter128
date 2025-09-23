@@ -58,7 +58,7 @@ void Webserver::start(const char *serverCert, const char *caCert, const unsigned
     {
         for (int idx = 0; idx < uriHandlerCount; idx++)
         {
-            uriHandlers[idx].user_ctx = this;
+            uriHandlers[idx].user_ctx = this->handlerContext;
             httpd_register_uri_handler(handle, uriHandlers + idx);
         }
     }

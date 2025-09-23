@@ -18,7 +18,7 @@ Config cfg = Config::getConfig(Config::getJson().c_str());
 PulseCounterScheduler pcscheduler(cfg);
 void configureUdpLogging()
 {
-    ESP_LOGI(TAG, "UDP Loggin configuration");
+    ESP_LOGI(TAG, "UDP Logging configuration");
     udp_logging_free();
     cfg = Config::getConfig(Config::getJson().c_str());
     if (cfg.getNetwork().getLogDestination() != nullptr)
@@ -36,18 +36,16 @@ void configureUdpLogging()
 
 void reconfigurePcScheduler()
 {
-    ESP_LOGI(TAG, "Reconfiguring");
+    ESP_LOGI(TAG, "Reconfiguring PCscheduler");
     cfg = Config::getConfig(Config::getJson().c_str());
     if (nullptr == pcscheduler.checkConfiguration(cfg))
         pcscheduler.setConfig(cfg);
-
 }
 void reconfigureHttp()
 {
     cfg = Config::getConfig(Config::getJson().c_str());
     webserver.setConfig(cfg.getNetwork(), true);
     configureUdpLogging();
-
 }
 
 void configureResetButton()
@@ -121,9 +119,9 @@ extern "C" void app_main()
         }
         if (webserver.reconfigureRequest)
         {
-            reconfigureHttp(); // Reconfigure everything which needs no validation
+            reconfigureHttp();        // Reconfigure everything which needs no validation
             reconfigurePcScheduler(); // Reconfigure only if validation is successful
         }
-       // If program button is pressed for one second, unconfigure https
+        // If program button is pressed for one second, unconfigure https
     }
 }
