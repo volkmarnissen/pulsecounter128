@@ -47,7 +47,35 @@ esp_err_t postUpdateHandler(httpd_req_t *req)
         esp_err_t err = esp_ota_begin(otaUpdatePartition, otaSize, &otaHandle);
         if (err != ESP_OK)
         {
-            ESP_LOGE(FNAME, "Error With OTA Begin, Cancelling OTA");
+            const char *msg = "";
+            switch (err)
+            {
+            case ESP_ERR_INVALID_ARG:
+                msg = "ESP_ERR_INVALID_ARG";
+                break;
+            case ESP_ERR_NO_MEM:
+                msg = "ESP_ERR_NO_MEM";
+                break;
+            case ESP_ERR_OTA_PARTITION_CONFLICT:
+                msg = "ESP_ERR_OTA_PARTITION_CONFLICT";
+                break;
+            case ESP_ERR_NOT_FOUND:
+                msg = "ESP_ERR_NOT_FOUND";
+                break;
+            case ESP_ERR_OTA_SELECT_INFO_INVALID:
+                msg = "ESP_ERR_OTA_SELECT_INFO_INVALID";
+                break;
+            case ESP_ERR_INVALID_SIZE:
+                msg = "ESP_ERR_INVALID_SIZE";
+                break;
+            case ESP_ERR_FLASH_OP_TIMEOUT:
+                msg = "ESP_ERR_FLASH_OP_TIMEOUT";
+                break;
+            case ESP_ERR_OTA_ROLLBACK_INVALID_STATE:
+                msg = "ESP_ERR_OTA_ROLLBACK_INVALID_STATE";
+                break;
+            }
+            ESP_LOGE(FNAME, "Error With OTA Begin, Cancelling OTA %s", msg);
             return ESP_FAIL;
         }
         else
