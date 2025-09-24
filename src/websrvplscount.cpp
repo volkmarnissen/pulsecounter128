@@ -85,18 +85,28 @@ public:
     }
     static void onConnected(MqttClient *client, const char *, const char *)
     {
-        Config::setJson(((ValidationMqttClient *)client)->content.c_str());
-        httpd_resp_set_hdr(((ValidationMqttClient *)client)->req, "Content-Type", "application/json");
-        httpd_resp_send(((ValidationMqttClient *)client)->req, "", HTTPD_RESP_USE_STRLEN);
-        ((ValidationMqttClient *)client)->reconfigureRequest = true;
+        if (client != NULL)
+        {
+            Config::setJson(((ValidationMqttClient *)client)->content.c_str());
+            httpd_resp_set_hdr(((ValidationMqttClient *)client)->req, "Content-Type", "application/json");
+            httpd_resp_send(((ValidationMqttClient *)client)->req, "", HTTPD_RESP_USE_STRLEN);
+            ((ValidationMqttClient *)client)->reconfigureRequest = true;
+        }
+        else
+            ESP_LOGI(TAG, "onConnected: client is NULL");
     }
     static void onError(MqttClient *client, const char *message, const char *code)
     {
         char buf[512];
-        sprintf(buf, "[{ \"errorcode\": %d, \"errormessage\": \"%s\"}]", (int)code, message);
-        httpd_resp_set_hdr(((ValidationMqttClient *)client)->req, "Content-Type", "application/json");
-        httpd_resp_set_status(((ValidationMqttClient *)client)->req, "422 Unprocessable Entity");
-        httpd_resp_send(((ValidationMqttClient *)client)->req, buf, HTTPD_RESP_USE_STRLEN);
+        if (client != NULL)
+        {
+            sprintf(buf, "[{ \"errorcode\": %d, \"errormessage\": \"%s\"}]", (int)code, message);
+            httpd_resp_set_hdr(((ValidationMqttClient *)client)->req, "Content-Type", "application/json");
+            httpd_resp_set_status(((ValidationMqttClient *)client)->req, "422 Unprocessable Entity");
+            httpd_resp_send(((ValidationMqttClient *)client)->req, buf, HTTPD_RESP_USE_STRLEN);
+        }
+        else
+            ESP_LOGI(TAG, "onConnected: client is NULL");
     }
     int stop()
     {
