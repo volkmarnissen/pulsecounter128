@@ -43,7 +43,11 @@ esp_err_t postUpdateHandler(httpd_req_t *req)
         }
 
         otaUpdatePartition = esp_ota_get_next_update_partition(NULL);
-
+        if (otaUpdatePartition == NULL)
+        {
+            ESP_LOGE(FNAME, "Error With <esp_ota_get_next_update_partition, Cancelling OTA");
+            return ESP_FAIL;
+        }
         esp_err_t err = esp_ota_begin(otaUpdatePartition, otaSize, &otaHandle);
         if (err != ESP_OK)
         {
