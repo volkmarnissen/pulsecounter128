@@ -53,6 +53,7 @@ int Scheduler::getMaxWaitTime() const
     }
 }
 
+
 int Scheduler::getMaxWaitTime(std::vector<int> &v, int biggest) const
 {
     if (v.begin() == v.end()) // empty Array
@@ -62,22 +63,19 @@ int Scheduler::getMaxWaitTime(std::vector<int> &v, int biggest) const
     else
     { // More than one entry
         int maxDiff = 0;
-        for (int i = 0; i < v.size() - 1; i++)
+        for (auto it = v.begin(); it < v.end() - 1; ++it)
         {
-            int diff = v[i + 1] - v[i];
+            int diff = it[1] - *it;
             if (diff > maxDiff)
                 maxDiff = diff;
         }
-        int last = v[v.size() - 1];
-        int first = v[0];
         // difference from last to first entry
-        int diff = first + biggest - last;
+        int diff = (*v.begin() + biggest) - *(v.end() - 1);
         if (diff > maxDiff)
             return diff;
         return maxDiff;
     }
 }
-
 void Scheduler::run()
 {
     ESP_LOGI(TAG, "Scheduler is running\n");
