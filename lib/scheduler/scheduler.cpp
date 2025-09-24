@@ -62,14 +62,16 @@ int Scheduler::getMaxWaitTime(std::vector<int> &v, int biggest) const
     else
     { // More than one entry
         int maxDiff = 0;
-        for (auto it = v.begin(); it < v.end() - 1; ++it)
+        for (int i = 0; i < v.size() - 1; i++)
         {
-            int diff = it[1] - *it;
+            int diff = v[i + 1] - v[i];
             if (diff > maxDiff)
                 maxDiff = diff;
         }
+        int last = v[v.size() - 1];
+        int first = v[0];
         // difference from last to first entry
-        int diff = (*v.begin() + biggest) - *(v.end() - 1);
+        int diff = first + biggest - last;
         if (diff > maxDiff)
             return diff;
         return maxDiff;
@@ -235,14 +237,16 @@ int Scheduler::getMilliSecondsToNextRun(struct timeval currentTime)
         waitTime -= currentMilliSecond;
     else
         waitTime = 0;
+    ESP_LOGI(TAG, "Schedule: MaxWaitTime %d\n", maxWaitTime);
+
     if (waitTime >= 0 && waitTime < maxWaitTime)
         return waitTime;
     else
     {
         std::tm currentDateTime = *std::localtime(&currentTime.tv_sec);
-        ESP_LOGI(TAG, "Schedule: Wait Time is out of range current Time: %2d:%2d:%2d:%ld next Run Time: %2d:%2d:%2d:%d WaitTime:%d  consumed: %d\n",
+        ESP_LOGI(TAG, "Schedule: Wait Time is out of range current Time: %2d:%2d:%2d:%ld next Run Time: %2d:%2d:%2d:%d WaitTime:%d MaxWaitTime %d, consumed: %d\n",
                  currentDateTime.tm_hour, currentDateTime.tm_min, currentDateTime.tm_sec, currentTime.tv_usec / 1000,
-                 datetime.tm_hour, datetime.tm_min, datetime.tm_sec, currentMilliSecond, waitTime, consumedTime);
+                 datetime.tm_hour, datetime.tm_min, datetime.tm_sec, currentMilliSecond, waitTime, maxWaitTime, consumedTime);
         return -1;
     }
 }

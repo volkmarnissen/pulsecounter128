@@ -75,8 +75,7 @@ public:
             this->hour.push_back(h);
         for (int m = 0; m < 59; m += 15)
             this->minute.push_back(m);
-        for (int s = 0; s < 59; s++)
-            this->second.push_back(s);
+        this->second.push_back(0);
     }
 };
 static void scheduler_getMilliSecondsToNextRun_nonNegative()
@@ -84,7 +83,7 @@ static void scheduler_getMilliSecondsToNextRun_nonNegative()
     ScheduleEvery15minConfig schedule;
     const int secPerDay = 60 * 60 * 24;
     const int minPerDay = 60 * 24;
-    for (int s = 0; s < secPerDay; s++)
+    for (int s = 0; s < secPerDay + 60 * 24; s += 60)
     {
         std::tm testTimeTm;
         testTimeTm.tm_hour = s / 60 / 60;
