@@ -72,12 +72,11 @@ esp_err_t postUpdateHandler(httpd_req_t *req)
             case ESP_ERR_INVALID_SIZE:
                 msg = "ESP_ERR_INVALID_SIZE";
                 break;
-            case ESP_ERR_FLASH_OP_TIMEOUT:
-                msg = "ESP_ERR_FLASH_OP_TIMEOUT";
-                break;
+
             case ESP_ERR_OTA_ROLLBACK_INVALID_STATE:
                 msg = "ESP_ERR_OTA_ROLLBACK_INVALID_STATE";
                 break;
+            default: msg = "Other Issue";
             }
             ESP_LOGE(FNAME, "Error With OTA Begin, Cancelling OTA %s", msg);
             return ESP_FAIL;
