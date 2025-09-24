@@ -12,8 +12,8 @@
 #define STORAGE_NAMESPACE "nvs"
 static const char *storageKey = "config";
 static const char *emptyJson = "{ \"counters\" : [], \"outputs\" : [],\"network\":{\"hostname\" : \"plscount\"},\
-\"mqtt\": { \"topic\": \"plscount\"}\
-\"schedule\":{\"hour\" : [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23]},{\"minute\" : [0]},{\"second\" : [0]}}";
+\"mqtt\": { \"topic\": \"plscount\"},\
+\"schedule\":{\"hour\" : [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23],\"minute\" : [0],\"second\" : [0]}}";
 
 #define TAG "config"
 
@@ -197,6 +197,7 @@ std::string Config::addBuildDate(const char *json)
 #define STRINGIFY(s) STRINGIFY1(s)
 #define STRINGIFY1(s) #s
     rc += STRINGIFY(BUILD_DATE);
+    ESP_LOGI(TAG, "Build date: %s", STRINGIFY(BUILD_DATE));
     rc += "\",";
 #endif
     rc += (json + 1);
@@ -237,7 +238,7 @@ const std::string Config::getJson()
     if (err != ESP_OK)
     {
         ESP_LOGE(TAG, "Initializing NVS failed\n");
-        return "";
+        return Config::addBuildDate(emptyJson);
     }
 
     err = nvs_open_from_partition(STORAGE_NAMESPACE, STORAGE_NAMESPACE, NVS_READWRITE, &my_handle);
@@ -248,7 +249,7 @@ const std::string Config::getJson()
         if (err != ESP_OK && err != ESP_ERR_NVS_NOT_FOUND)
             ESP_LOGE(TAG, "Unable to read Configuration from NVS\n");
         else if (err == ESP_ERR_NVS_NOT_FOUND)
-            return emptyJson;
+            return Config::addBuildDate(emptyJson);
         else
         {
             char *configJson = (char *)malloc(required_size + sizeof(uint32_t));
@@ -268,6 +269,7 @@ const std::string Config::getJson()
     else
     {
         ESP_LOGE(TAG, "error %d\n", err);
+        return Config::addBuildDate(emptyJson);
     }
     nvs_flash_deinit();
     return rc;
