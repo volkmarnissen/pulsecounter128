@@ -53,7 +53,6 @@ int Scheduler::getMaxWaitTime() const
     }
 }
 
-
 int Scheduler::getMaxWaitTime(std::vector<int> &v, int biggest) const
 {
     if (v.begin() == v.end()) // empty Array
@@ -87,17 +86,18 @@ void Scheduler::executeLocal()
     {
         struct timeval now;
         gettimeofday(&now, NULL);
-        int millis(getMilliSecondsToNextRun(now));
+        int millis = getMilliSecondsToNextRun(now);
         if (millis == 0)
             std::this_thread::sleep_for(std::chrono::seconds(1));
-        else if (millis > 0)
+        millis = getMilliSecondsToNextRun(now);
+        if (millis > 0)
         {
             std::unique_lock<std::mutex> lk(cv_m);
-            ESP_LOGI(TAG, "Wait for %d ms\n", millis);
+            ESP_LOGD(TAG, "Wait for %d ms\n", millis);
             cv.wait_for(lk, std::chrono::milliseconds(millis));
             if (!stopRequest)
             {
-                ESP_LOGI(TAG, "Executing\n");
+                ESP_LOGD(TAG, "Executing\n");
                 execute();
                 struct timeval afterExecute;
                 gettimeofday(&afterExecute, NULL);
@@ -235,7 +235,7 @@ int Scheduler::getMilliSecondsToNextRun(struct timeval currentTime)
         waitTime -= currentMilliSecond;
     else
         waitTime = 0;
-    ESP_LOGI(TAG, "Schedule: MaxWaitTime %d\n", maxWaitTime);
+    ESP_LOGD(TAG, "Schedule: MaxWaitTime %d\n", maxWaitTime);
 
     if (waitTime >= 0 && waitTime < maxWaitTime)
         return waitTime;

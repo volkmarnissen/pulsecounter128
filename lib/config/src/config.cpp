@@ -61,15 +61,18 @@ public:
     OutputConfigLoad() {};
     OutputConfigLoad(const JsonObject &source)
     {
-
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wstrict-aliasing"
         setValue<int>((int &)config.type, source, "type");
+#pragma GCC diagnostic pop
+
         setValue<int>(port, source, "port");
     };
 };
 
 class NetworkConfigLoad : public NetworkConfig
 {
-public: 
+public:
     NetworkConfigLoad() {};
     NetworkConfigLoad(const JsonObject &source)
     {
@@ -94,7 +97,10 @@ public:
             topic = "plscount";
         setValueString(username, source, "username");
         setValueString(password, source, "password");
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wstrict-aliasing"
         setValue<int>((int &)authenticationMethod, source, "authenticationMethod");
+#pragma GCC diagnostic pop
     }
 };
 class ScheduleConfigLoad : public ScheduleConfig

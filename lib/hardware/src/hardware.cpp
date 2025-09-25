@@ -114,7 +114,7 @@ bool I2c::initBus()
         .sda_pullup_en = GPIO_PULLUP_ENABLE, // Enable internal pull-up for SDA line
         .scl_pullup_en = GPIO_PULLUP_ENABLE, // Enable internal pull-up for SCL line
         .master = {},                        // Set I2C clock frequency to 40kHz
-    };
+        .clk_flags = 0};
     conf.master.clk_speed = I2C_MASTER_FREQ_HZ;
     if (ESP_OK != i2c_param_config(i2c_master_port, &conf))
     {

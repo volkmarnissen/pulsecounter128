@@ -76,21 +76,19 @@ esp_err_t postUpdateHandler(httpd_req_t *req)
             case ESP_ERR_OTA_ROLLBACK_INVALID_STATE:
                 msg = "ESP_ERR_OTA_ROLLBACK_INVALID_STATE";
                 break;
-            default: msg = "Other Issue";
+            default:
+                msg = "Other Issue";
             }
             ESP_LOGE(FNAME, "Error With OTA Begin, Cancelling OTA %s", msg);
             return ESP_FAIL;
         }
         else
-        {
             ESP_LOGI(FNAME, "Writing to partition subtype %d at offset 0x%x", otaUpdatePartition->subtype, (unsigned)otaUpdatePartition->address);
-        }
     }
 
     do
     {
         // Read the ota data
-        // ESP_LOGI(FNAME, "%d %d", content_length, ota_buff_size);
         if ((recv_len = httpd_req_recv(req, otaBuffer, std::min(content_length, ota_buff_size))) < 0)
         {
             if (recv_len == HTTPD_SOCK_ERR_TIMEOUT)
@@ -111,7 +109,7 @@ esp_err_t postUpdateHandler(httpd_req_t *req)
     } while (recv_len > 0 && content_received < content_length);
 
     // Webserver.setOtaProgress((otaReceived * 100.0f) / otaSize);
-    ESP_LOGI(FNAME, "Received %d / %d (%.02f)", otaReceived, otaSize, (otaReceived * 100.0) / otaSize);
+    ESP_LOGD(FNAME, "Received %d / %d (%.02f)", otaReceived, otaSize, (otaReceived * 100.0) / otaSize);
 
     if (otaReceived >= otaSize)
     {
@@ -128,8 +126,7 @@ esp_err_t postUpdateHandler(httpd_req_t *req)
             {
                 const esp_partition_t *boot_partition = esp_ota_get_boot_partition();
 
-                ESP_LOGI(FNAME, "Next boot partition subtype %d at offset 0x%x", boot_partition->subtype, (unsigned)boot_partition->address);
-                ESP_LOGI(FNAME, "Rebooting");
+                ESP_LOGI(FNAME, "Rebooting: Next boot partition subtype %d at offset 0x%x", boot_partition->subtype, (unsigned)boot_partition->address);
                 // Webserver.setOtaStatus(otaStatus::DONE);
                 esp_restart();
             }
