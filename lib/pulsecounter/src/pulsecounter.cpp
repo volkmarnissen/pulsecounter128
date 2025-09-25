@@ -278,7 +278,7 @@ std::string Pulsecounter::getStatusJson()
       cutComma = true;
    }
    if (mqttStatus.length() > 0){
-      rc +=  mqttStatus + "\n";
+      rc +=  mqttStatus + "\n,";
       cutComma = true;
    }
    char buf[128];
