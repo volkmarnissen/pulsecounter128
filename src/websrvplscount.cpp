@@ -93,7 +93,7 @@ public:
             ((ValidationMqttClient *)client)->reconfigureRequest = true;
         }
         else
-            ESP_LOGI(TAG, "onConnected: client is NULL");
+            ESP_LOGE(TAG, "onConnected: client is NULL");
     }
     static void onError(MqttClient *client, const char *message, const char *code)
     {
@@ -167,6 +167,7 @@ void WebserverPulsecounter::startValidationMqttClient(httpd_req_t *req, const ch
     validationMqttClient = new ValidationMqttClient(req, content, network);
     validationMqttClient->start(config);
     std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+    ESP_LOGI(TAG, "validate MQTT %s", validationMqttClient->reconfigureRequest ? "successful" : "failed");
     if (validationMqttClient->reconfigureRequest)
         reconfigureRequest = true;
 }

@@ -169,15 +169,15 @@ protected:
     }
     static std::string getErrorsString()
     {
-        char buf[512];
+        char buf[512] = "{\"error\": \"";
         std::string rc = "";
         for (int i = 0; i < mqttErrorsCount; i++)
         {
-            sprintf(buf, "{\"error\": \"%s\", \"to\": %lld, \"from\": %lld, \"count\": %d }",
-                    mqttErrors[i].error,
-                    mqttErrors[i].to,
-                    mqttErrors[i].from,
-                    mqttErrors[i].count);
+            strcat(buf, mqttErrors[i].error);
+            snprintf(buf + strlen(buf), 512, ", \"to\": %lld, \"from\": %lld, \"count\": %d }",
+                     mqttErrors[i].to,
+                     mqttErrors[i].from,
+                     mqttErrors[i].count);
             rc += buf;
             if (i < mqttErrorsCount - 1)
                 rc += ",\n";

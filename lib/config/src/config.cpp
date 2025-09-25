@@ -69,7 +69,7 @@ public:
 
 class NetworkConfigLoad : public NetworkConfig
 {
-public:
+public: 
     NetworkConfigLoad() {};
     NetworkConfigLoad(const JsonObject &source)
     {
@@ -79,6 +79,7 @@ public:
         setValueString(hostname, source, "hostname");
         setValueString(ntpserver, source, "ntpserver");
         setValueString(logdestination, source, "logdestination");
+        setValueString(logDebugTags, source, "logdebugtags");
     }
 };
 class MqttConfigLoad : public MqttConfig

@@ -43,12 +43,14 @@ protected:
     std::string sslca;
     std::string ntpserver;
     std::string logdestination;
+    std::string logDebugTags;
 
 public:
     const char *getSslHost() const { return sslhost.c_str(); };
     const char *getSslHostKey() const { return sslhostkey.c_str(); };
     const char *getSslCa() const { return sslca.c_str(); };
     const char *getLogDestination() const { return logdestination.c_str(); };
+    const char *getLogDebugTags() const { return logDebugTags.c_str(); };
     const char *getHostname() const { return (hostname.empty() ? defaultHostName.c_str() : hostname.c_str()); };
     const char *getNtpserver() const { return ntpserver.c_str(); };
 };

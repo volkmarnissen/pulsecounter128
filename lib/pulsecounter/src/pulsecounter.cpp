@@ -244,19 +244,22 @@ void Pulsecounter::countPulses(time_t now)
          pc.lastSecond = now;
          pc.counter++;
       }
-      sprintf(header + strlen(header), "%3d ", (int)pc.numInputPort);
-      sprintf(header2 + strlen(header2), "%3d ", (int)pc.numOutPort);
-      sprintf(buf + strlen(buf), "%3d ", (int)pc.counter);
+      if (esp_log_level_get(TAG) == ESP_LOG_DEBUG)
+      {
+         sprintf(header + strlen(header), "%3d ", (int)pc.numInputPort);
+         sprintf(header2 + strlen(header2), "%3d ", (int)pc.numOutPort);
+         sprintf(buf + strlen(buf), "%3d ", (int)pc.counter);
+      }
    }
-   if (lineCounter++ % 10 == 0)
+   if (lineCounter++ % 10 == 0 && esp_log_level_get(TAG) == ESP_LOG_DEBUG)
    {
-      ESP_LOGI(TAG, "%s", header);
-      ESP_LOGI(TAG, "%s", header2);
+      ESP_LOGD(TAG, "%s", header);
+      ESP_LOGD(TAG, "%s", header2);
    }
    if (inputIdx == -1)
       ESP_LOGI(TAG, "%s no rising edge found %4x %4x", buf, imaskp, imaskc);
    else
-      ESP_LOGI(TAG, "%s %d/%d %4x %4x", buf, inputPort, inputIdx, imaskp, imaskc);
+      ESP_LOGD(TAG, "%s %d/%d %4x %4x", buf, inputPort, inputIdx, imaskp, imaskc);
 }
 
 void Pulsecounter::reset()
@@ -273,12 +276,14 @@ std::string Pulsecounter::getStatusJson()
 {
    std::string rc = "[";
    bool cutComma = false;
-   if(errors.length() > 0 ){
+   if (errors.length() > 0)
+   {
       rc += errors + "\n,";
       cutComma = true;
    }
-   if (mqttStatus.length() > 0){
-      rc +=  mqttStatus + "\n,";
+   if (mqttStatus.length() > 0)
+   {
+      rc += mqttStatus + "\n,";
       cutComma = true;
    }
    char buf[128];

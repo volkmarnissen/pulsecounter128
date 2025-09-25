@@ -16,14 +16,16 @@ WebserverPulsecounter webserver;
 Ethernet eth;
 Config cfg = Config::getConfig(Config::getJson().c_str());
 PulseCounterScheduler pcscheduler(cfg);
-void configureUdpLogging()
+void configureLogging()
 {
-    ESP_LOGI(TAG, "UDP Logging configuration");
+    std::string msg = "";
     udp_logging_free();
     cfg = Config::getConfig(Config::getJson().c_str());
     if (cfg.getNetwork().getLogDestination() != nullptr)
     {
         std::string c(cfg.getNetwork().getLogDestination());
+        msg += " Host: ";
+        msg += c;
         int pos;
         if (std::string::npos != (pos = c.find(":")))
         {
@@ -32,6 +34,21 @@ void configureUdpLogging()
             udp_logging_init(node.c_str(), service.c_str(), udp_logging_vprintf);
         }
     }
+    esp_log_level_set("*", ESP_LOG_INFO);
+    if (cfg.getNetwork().getLogDebugTags() != nullptr)
+    {
+
+        msg += " Debug: ";
+        msg += cfg.getNetwork().getLogDebugTags();
+        std::istringstream iss(cfg.getNetwork().getLogDebugTags());
+        std::string tag;
+        while (std::getline(iss, tag, ' '))
+        {
+            esp_log_level_set(tag.c_str(), ESP_LOG_DEBUG);
+            ESP_LOGI(TAG, "Set debug log level for %s", tag.c_str());
+        }
+    }
+    ESP_LOGI(TAG, "UDP Logging configuration:%s", msg.c_str());
 }
 
 void reconfigurePcScheduler()
@@ -44,8 +61,8 @@ void reconfigurePcScheduler()
 void reconfigureHttp()
 {
     cfg = Config::getConfig(Config::getJson().c_str());
+    configureLogging();
     webserver.setConfig(cfg.getNetwork(), true);
-    configureUdpLogging();
 }
 
 void configureResetButton()
@@ -68,7 +85,6 @@ void configureResetButton()
 
 void shutdownHandler(void)
 {
-    va_list l;
     udp_logging_free();
 }
 
@@ -96,7 +112,7 @@ extern "C" void app_main()
     if (eth.waitForConnection())
     {
         ESP_LOGI(TAG, "Configuring UDP Logging");
-        configureUdpLogging();
+        configureLogging();
         ESP_LOGI(TAG, "Starting pcscheduler");
         const char *msg = pcscheduler.checkConfiguration(cfg);
         if (msg == nullptr)
