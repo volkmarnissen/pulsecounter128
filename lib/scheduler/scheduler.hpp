@@ -19,8 +19,8 @@ class Scheduler
                      // 1) to synchronize accesses to i
                      // 2) to synchronize accesses to std::cerr
                      // 3) for the condition variable cv
-
     bool stopRequest = false;
+    bool isExecuting = false;
     void executeLocal();
     void wait(int millis);
     int maxWaitTime;

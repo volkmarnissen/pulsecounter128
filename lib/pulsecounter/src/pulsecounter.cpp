@@ -20,6 +20,7 @@ static u_int16_t waitTimeInMillis = 20;
 #endif
 static std::string errors;
 static std::string mqttStatus;
+static time_t schedulerRunTime = 0;
 // ULP data =============
 STATIC_ESP32 OutputData outputData[8];
 STATIC_ESP32 NoOutputData noOutputData;
@@ -286,6 +287,12 @@ std::string Pulsecounter::getStatusJson()
       rc += mqttStatus + "\n,";
       cutComma = true;
    }
+   if (schedulerRunTime != 0)
+   {
+      rc += "{\", nextRunTime\": " + std::to_string(((unsigned long)schedulerRunTime) * 1000) + " }\n,";
+      cutComma = true;
+   }
+
    char buf[128];
    for (int a = 0; a < pulseCounterCount; a++)
       if (pulseCounters[a].numInputPort != noInputPort)
@@ -309,7 +316,10 @@ void Pulsecounter::setMqttStatus(std::string _mqttStatus)
 {
    mqttStatus = _mqttStatus;
 }
-
+void Pulsecounter::setSchedulerRunTime(time_t nextRun)
+{
+   schedulerRunTime = nextRun;
+}
 uint32_t Pulsecounter::getCounts(uint8_t outputPort, uint8_t inputPort)
 {
 

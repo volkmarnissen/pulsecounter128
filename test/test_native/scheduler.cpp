@@ -44,7 +44,7 @@ void scheduler_stopThread()
     ESP_LOGI(TAG, "scheduler is stopped\n");
 }
 
-static void testGetMilliSecondsToNextRun(std::tm expectedTimeTm, int expectedTimeMs, std::tm testTimeTm, int testTimeMs)
+static void testGetMilliSecondsToNextRun(std::tm expectedTimeTm, int expectedTimeMs, std::tm testTimeTm, int testTimeMs, ScheduleConfig *schedule = NULL)
 {
     // adjust mday if required
     std::time_t expectedTime = std::mktime(&expectedTimeTm);
@@ -52,8 +52,16 @@ static void testGetMilliSecondsToNextRun(std::tm expectedTimeTm, int expectedTim
     struct timeval testTime;
     testTime.tv_sec = std::mktime(&testTimeTm);
     testTime.tv_usec = testTimeMs * 1000; // 100ms
+
     Config config = Config::getConfig(readFile("cypress/fixtures/config.json").c_str());
-    TestScheduler sch(const_cast<ScheduleConfig &>(config.getSchedule()));
+    ScheduleConfig defaultSchedule(const_cast<ScheduleConfig &>(config.getSchedule()));
+
+    if (schedule == NULL)
+    {
+        Config config = Config::getConfig(readFile("cypress/fixtures/config.json").c_str());
+        schedule = &defaultSchedule;
+    }
+    TestScheduler sch(*schedule);
     int rc = sch.getMilliSecondsToNextRun(testTime);
     int millis = rc % 1000;
     time_t testTimeT = testTime.tv_sec;
@@ -152,6 +160,24 @@ void scheduler_getMilliSecondsToNextRun_NextMonth()
     expectedTimeTm.tm_mon = 1;
     testGetMilliSecondsToNextRun(expectedTimeTm, 0, testTimeTm, 100);
 }
+void scheduler_getMilliSecondsToNextRun_afterLastMinute()
+{
+    std::tm testTimeTm{};
+    std::tm expectedTimeTm = testTimeTm;
+    testTimeTm.tm_hour = 21;
+    testTimeTm.tm_min = 55;
+    testTimeTm.tm_sec = 23;
+    testTimeTm.tm_mday = 31;
+    testTimeTm.tm_mon = 0;
+
+    expectedTimeTm.tm_hour = 22;
+    expectedTimeTm.tm_min = 0;
+    expectedTimeTm.tm_sec = 0;
+    expectedTimeTm.tm_mday = 31;
+    expectedTimeTm.tm_mon = 0;
+    ScheduleEvery15minConfig c;
+    testGetMilliSecondsToNextRun(expectedTimeTm, 0, testTimeTm, 100, &c);
+}
 void scheduler_getMilliSecondsToNextRun_afterLastSecond()
 {
     std::tm testTimeTm{};
@@ -241,6 +267,7 @@ void scheduler_tests()
     RUN_TEST(scheduler_getMilliSecondsToNextRun);
     RUN_TEST(scheduler_getMilliSecondsToNextRun_NextDay);
     RUN_TEST(scheduler_getMilliSecondsToNextRun_NextMonth);
+    RUN_TEST(scheduler_getMilliSecondsToNextRun_afterLastMinute);
     RUN_TEST(scheduler_getMilliSecondsToNextRun_afterLastSecond);
     RUN_TEST(scheduler_getMilliSecondsToNextRun_positive);
     RUN_TEST(scheduler_getMilliSecondsToNextRun_nonNegative);

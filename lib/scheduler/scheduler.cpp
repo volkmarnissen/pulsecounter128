@@ -78,18 +78,32 @@ int Scheduler::getMaxWaitTime(std::vector<int> &v, int biggest) const
 void Scheduler::run()
 {
     ESP_LOGI(TAG, "Scheduler is running\n");
+    stopRequest = false;
     t = new std::thread(&Scheduler::executeLocal, this);
 };
+
+static struct timeval lastRun = {0, 0};
 void Scheduler::executeLocal()
 {
     while (!stopRequest)
     {
         struct timeval now;
         gettimeofday(&now, NULL);
-        int millis = getMilliSecondsToNextRun(now);
+        int millis = 0;
+        if (lastRun.tv_sec == now.tv_sec)
+        {
+            ESP_LOGD(TAG, "Same Second as last run\n", millis);
+            now.tv_sec++;
+            millis = getMilliSecondsToNextRun(now) + 1000;
+        }
+        else
+            millis = getMilliSecondsToNextRun(now);
         if (millis == 0)
-            std::this_thread::sleep_for(std::chrono::seconds(1));
-        millis = getMilliSecondsToNextRun(now);
+        {
+            ESP_LOGD(TAG, "Same Second\n", millis);
+            now.tv_sec++;
+            millis = getMilliSecondsToNextRun(now) + 1000;
+        }
         if (millis > 0)
         {
             std::unique_lock<std::mutex> lk(cv_m);
@@ -98,14 +112,8 @@ void Scheduler::executeLocal()
             if (!stopRequest)
             {
                 ESP_LOGD(TAG, "Executing\n");
+                lastRun = now;
                 execute();
-                struct timeval afterExecute;
-                gettimeofday(&afterExecute, NULL);
-                // Don't execute for the same second again.
-                if (afterExecute.tv_sec == now.tv_sec)
-                {
-                    std::this_thread::sleep_for(std::chrono::milliseconds(1001 - (afterExecute.tv_usec - now.tv_usec) * 1000));
-                }
             }
         }
         else
@@ -142,17 +150,25 @@ int getIndex(const std::vector<int> &v, int searchObject)
     return std::distance(v.begin(), it);
 }
 
-int getNextTime(const std::vector<int> &v, int current, int max)
+int getNextTime(const std::vector<int> &v, int current, int max, const char *name)
 {
+    ESP_LOGD(TAG, "getNextTime %s %d(%d)", name, current, max);
     int idx = getIndex(v, current);
     while (idx == -1 && current < max)
         idx = getIndex(v, ++current);
+    ESP_LOGD(TAG, "getNextTime %s idx=%d current=%d", name, idx, current);
     if (idx == -1)
     {
         if (v.begin() != v.end())
-            return -(*v.begin()); // First entry of vector
+        {
+            ESP_LOGD(TAG, "Next cycle=%d", *v.begin());
+            return max; // First entry of vector
+        }
         else
+        {
+            ESP_LOGI(TAG, "No configured %s found for %d(%d)", name, current, max);
             return -999;
+        }
     }
     return current;
 }
@@ -189,7 +205,7 @@ int Scheduler::getMilliSecondsToNextRun(struct timeval currentTime)
         datetime.tm_sec = 0;
         currentMilliSecond = 0;
     }
-    datetime.tm_hour = getNextTime(hour, datetime.tm_hour, 24); // hour needs no more changes
+    datetime.tm_hour = getNextTime(hour, datetime.tm_hour, 24, "hour"); // hour needs no more changes
     if (datetime.tm_hour == -999)
         return -1;
 
@@ -208,18 +224,20 @@ int Scheduler::getMilliSecondsToNextRun(struct timeval currentTime)
         currentMilliSecond = 0;
     }
 
-    datetime.tm_min = getNextTime(minute, datetime.tm_min, 60); // minute needs no more changes
+    datetime.tm_min = getNextTime(minute, datetime.tm_min, 60, "minute"); // minute needs no more changes
     if (datetime.tm_min == -999)
         return -1;
     lastSecondOfDayT = mktime(&lastSecondOfDay);
 
-    if (lastSecondOfDayT < currentTime.tv_sec || (currentTime.tv_usec >= 1000 && lastSecondOfDayT == currentTime.tv_sec))
+    if (lastSecondOfDayT < currentTime.tv_sec || (currentTime.tv_usec >= 1000 && lastSecondOfDayT == currentTime.tv_sec) || datetime.tm_min == 60)
     {
+        datetime.tm_hour++;
+        datetime.tm_min = minute[0];
         datetime.tm_sec = 0;
         lastSecondOfDay.tm_sec = 0;
         currentMilliSecond = 0;
     }
-    datetime.tm_sec = getNextTime(second, datetime.tm_sec, 60); // second needs no more changes
+    datetime.tm_sec = getNextTime(second, datetime.tm_sec, 60, "second"); // second needs no more changes
     if (datetime.tm_sec == -999)
         return -1;
     if (currentTime.tv_usec >= 1000 && lastSecondOfDayT == currentTime.tv_sec)
@@ -235,7 +253,7 @@ int Scheduler::getMilliSecondsToNextRun(struct timeval currentTime)
         waitTime -= currentMilliSecond;
     else
         waitTime = 0;
-    ESP_LOGD(TAG, "Schedule: MaxWaitTime %d\n", maxWaitTime);
+    ESP_LOGD(TAG, "Schedule: waitTime %d, MaxWaitTime %d\n", waitTime, maxWaitTime);
 
     if (waitTime >= 0 && waitTime < maxWaitTime)
         return waitTime;

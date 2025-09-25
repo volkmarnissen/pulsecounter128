@@ -46,6 +46,7 @@ namespace Pulsecounter
   extern void reset();
   extern void setErrors(std::string);
   extern void setMqttStatus(std::string);
+  extern void setSchedulerRunTime(time_t nextRun);
   extern std::string getStatusJson();
   extern std::string resetLastSeconds();
 #ifdef NATIVE

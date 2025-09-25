@@ -222,15 +222,14 @@ void testCountPulses(imask_t imaskp, imask_t imaskc, int expPcNum, const char *e
 }
 void pulsecounter_countPulses()
 {
-    char expJson[] = "[{\"lastPublished\": 1234567890 },\n{ \"input\": 0, \"output\":255, \"last\": 0, \"lastSecond\": 1234 },\
-{ \"input\": 1, \"output\":255, \"last\": 0, \"lastSecond\": 1234 },\
-{ \"input\": 2, \"output\":255, \"last\": 0, \"lastSecond\": 1234 },\
-{ \"input\": 3, \"output\":255, \"last\": 0, \"lastSecond\": 1234 },\
-{ \"input\": 4, \"output\":255, \"last\": 0, \"lastSecond\": 1234 },\
-{ \"input\": 5, \"output\":255, \"last\": 0, \"lastSecond\": 1234 },\
-{ \"input\": 6, \"output\":255, \"last\": 0, \"lastSecond\": 1234 },\
-{ \"input\": 7, \"output\":255, \"last\": 1, \"lastSecond\": 2222 }]";
-    Pulsecounter::setMqttStatus("{\"lastPublished\": 1234567890 }");
+    char expJson[] = "[{ \"input\": 0, \"output\":255, \"last\": 0, \"lastSecond\": 1234 }\n,\
+{ \"input\": 1, \"output\":255, \"last\": 0, \"lastSecond\": 1234 }\n,\
+{ \"input\": 2, \"output\":255, \"last\": 0, \"lastSecond\": 1234 }\n,\
+{ \"input\": 3, \"output\":255, \"last\": 0, \"lastSecond\": 1234 }\n,\
+{ \"input\": 4, \"output\":255, \"last\": 0, \"lastSecond\": 1234 }\n,\
+{ \"input\": 5, \"output\":255, \"last\": 0, \"lastSecond\": 1234 }\n,\
+{ \"input\": 6, \"output\":255, \"last\": 0, \"lastSecond\": 1234 }\n,\
+{ \"input\": 7, \"output\":255, \"last\": 1, \"lastSecond\": 2222 }\n]";
 
     testCountPulses(0xff3f, 0xffbf, 7, expJson, "0xff3f, 0xffbf");
     testCountPulses(0xff7f, 0xffff, 7, expJson, "0xff7f, 0xffff");
