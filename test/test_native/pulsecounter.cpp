@@ -4,7 +4,7 @@
 #include "native.hpp"
 #include <cstring>
 #include <string>
-
+#include "ArduinoJson.h"
 using namespace Pulsecounter;
 
 static int readInputCount = 0;
@@ -236,11 +236,17 @@ void pulsecounter_countPulses()
     testCountPulses(0xff7f, 0xffff, 7, expJson, "0xff7f, 0xffff");
 }
 
+bool validateJson(const char* input) {
+  StaticJsonDocument<0> doc, filter;
+  return deserializeJson(doc, input, DeserializationOption::Filter(filter)) == DeserializationError::Ok;
+}
+
 void pulsecounter_getStatusJson()
 {
     Pulsecounter::setErrors("");
     Pulsecounter::setMqttStatus("{\"lastPublised\": 123456789}");
     std::string rc = Pulsecounter::getStatusJson();
+    TEST_ASSERT_TRUE_MESSAGE(validateJson(rc.c_str()),"Invalid Json string")
 }
 
 void pulsecounter_setOutputConfiguration()

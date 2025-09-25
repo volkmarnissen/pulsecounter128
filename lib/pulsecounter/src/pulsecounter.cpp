@@ -271,17 +271,21 @@ std::string Pulsecounter::resetLastSeconds()
 }
 std::string Pulsecounter::getStatusJson()
 {
-   std::string rc = "[" + errors;
-   if (mqttStatus.length() > 0)
-      rc += (errors.length() > 0 ? "," : "") + mqttStatus;
-   char buf[128];
+   std::string rc = "[";
    bool cutComma = false;
-   if (mqttStatus.length() > 0 && pulseCounterCount > 0)
-      rc += ",\n";
+   if(errors.length() > 0 ){
+      rc += errors + "\n,";
+      cutComma = true;
+   }
+   if (mqttStatus.length() > 0){
+      rc +=  mqttStatus + "\n";
+      cutComma = true;
+   }
+   char buf[128];
    for (int a = 0; a < pulseCounterCount; a++)
       if (pulseCounters[a].numInputPort != noInputPort)
       {
-         sprintf(buf, "{ \"input\": %d, \"output\":%d, \"last\": %d, \"lastSecond\": %ld },",
+         sprintf(buf, "{ \"input\": %d, \"output\":%d, \"last\": %d, \"lastSecond\": %ld }\n,",
                  (int)pulseCounters[a].numInputPort, (int)pulseCounters[a].numOutPort, (int)pulseCounters[a].counter,
                  (long)pulseCounters[a].lastSecond);
          rc += buf;
